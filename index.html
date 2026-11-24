@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>软件下载中心</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: acenter;
+    justify-content: center;
+    padding: 24px;
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background-color: #fdf6e3;
+    background-image: radial-gradient(circle at 15% 20%, #ffe9b8 0%, transparent 45%),
+      radial-gradient(circle at 85% 15%, #fff3d1 0%, transparent 40%),
+      radial-gradient(circle at 75% 85%, #ffe2c2 0%, transparent 45%),
+      radial-gradient(circle at 25% 90%, #fff7e0 0%, transparent 40%);
+    background-attachment: fixed;
+    color: #4a3f2f;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 8px; }
+  .subtitle { font-size: 0.9rem; color: #8a7a5c; margin-bottom: 32px; }
+  label { display: block; font-size: 0.85rem; color: #7a6a4d; font-weight: 500; margin-bottom: 8px; }
+  input[type="text"], input[type="url"], input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    font: inherit;
+    font-size: 0.95rem;
+    color: #4a3f2f;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1.5px solid rgba(210, 190, 150, 0.75);
+    border-radius: 11px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input[type="text"]:focus, input[type="url"]:focus, input[type="password"]:focus {
+    border-color: #e0a95c;
+    box-shadow: 0 0 0 4px rgba(224, 169, 92, 0.18);
+  }
+
+  /* ---------- 顶部工具栏 ---------- */
+  .topbar {
+    position: fixed;
+    top: 18px;
+    right: 20px;
+    z-index: 50;
+    display: flex;
+    gap: 10px;
+  }
+  .admin-entry {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #6b4e1f;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1.5px solid rgba(210, 190, 150, 0.8);
+    border-radius: 999px;
+    cursor: pointer;
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    box-shadow: 0 4px 14px rgba(180, 150, 90, 0.16);
+    transition: background 0.2s, transform 0.18s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .admin-entry:hover {
+    background: #fffdf8;
+    border-color: #e0a95c;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(224, 169, 92, 0.26);
+  }
+  .admin-entry:active { transform: translateY(0); }
+  .admin-entry .ico { font-size: 0.95rem; line-height: 1; }
+
+  /* ---------- 下载页面板 ---------- */
+  .panel {
+    /* 固定宽度：不随软件名称/版本号长度变化 */
+    width: 680px;
+    max-width: calc(100vw - 48px);
+    flex: 0 0 auto;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 20px;
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: 0 20px 60px rgba(180, 150, 90, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  .field { margin-bottom: 20px; }
+  .row {
+    display: grid;
+    /* minmax(0,1fr) 让两列等宽且不被子项撑开 */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: end;
+    margin-bottom: 20px;
+  }
+  .row .field { margin-bottom: 0; min-width: 0; }
+  .dd { position: relative; min-width: 0; }
+  .dd select { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .dd-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 48px;
+    padding: 0 44px 0 16px;
+    font: inherit;
+    font-size: 1rem;
+    color: #4a3f2f;
+    text-align: left;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1.5px solid rgba(210, 190, 150, 0.75);
+    border-radius: 13px;
+    outline: none;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: border-color 0.25s, box-shadow 0.3s, background 0.25s,
+      transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+  .dd-trigger:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(224, 169, 92, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(224, 169, 92, 0.2);
+  }
+  .dd.open .dd-trigger {
+    background: #fffdf8;
+    border-color: #e0a95c;
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 4px rgba(224, 169, 92, 0.2), 0 10px 24px rgba(224, 169, 92, 0.26);
+  }
+  .dd-label { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .dd-label.swap { animation: ddLabelSwap 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes ddLabelSwap {
+    from { opacity: 0; transform: translateY(7px); }
+    to { opacity: 1; transform: none; }
+  }
+  .dd-trigger::after {
+    content: "";
+    position: absolute;
+    right: 17px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #b07f33;
+    border-bottom: 2px solid #b07f33;
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+    transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.25s;
+  }
+  .dd.open .dd-trigger::after { transform: translateY(-25%) rotate(225deg); border-color: #8a5c14; }
+
+  .dd-menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 30;
+    max-height: 264px;
+    overflow-y: auto;
+    padding: 6px;
+    background: rgba(255, 253, 247, 0.97);
+    border: 1px solid rgba(224, 200, 160, 0.85);
+    border-radius: 14px;
+    box-shadow: 0 18px 40px rgba(150, 120, 70, 0.22), 0 2px 8px rgba(150, 120, 70, 0.1);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    transform-origin: top center;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.96);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.24s cubic-bezier(0.4, 0, 1, 1), visibility 0s 0.24s;
+  }
+  .dd.open .dd-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+    transition: opacity 0.2s ease, transform 0.34s cubic-bezier(0.34, 1.4, 0.64, 1), visibility 0s;
+  }
+  .dd.up .dd-menu {
+    top: auto;
+    bottom: calc(100% + 8px);
+    transform-origin: bottom center;
+  }
+  .dd.up:not(.open) .dd-menu { transform: translateY(8px) scale(0.96); }
+  .dd-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.24s ease, background 0.16s, color 0.16s;
+  }
+  .dd.open .dd-item {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.3s ease, transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+      background 0.16s, color 0.16s;
+    transition-delay: calc(var(--i, 0) * 35ms + 45ms), calc(var(--i, 0) * 35ms + 45ms), 0s, 0s;
+  }
+  .dd.open .dd-item:hover,
+  .dd.open .dd-item.active {
+    background: rgba(255, 226, 173, 0.7);
+    transform: translateX(2px);
+  }
+  .dd.open .dd-item.selected {
+    background: rgba(255, 236, 200, 0.6);
+    color: #8a5c14;
+    font-weight: 600;
+  }
+  .dd-check {
+    margin-left: auto;
+    margin-right: 3px;
+    width: 6px;
+    height: 11px;
+    border-right: 2.5px solid #d98f2b;
+    border-bottom: 2.5px solid #d98f2b;
+    opacity: 0;
+    transform: scale(0.3) rotate(45deg);
+    transition: opacity 0.2s, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .dd-item.selected .dd-check { opacity: 1; transform: scale(1) rotate(45deg); }
+  @keyframes ddPulse {
+    0% { box-shadow: 0 0 0 0 rgba(224, 169, 92, 0.5); }
+    100% { box-shadow: 0 0 0 10px rgba(224, 169, 92, 0); }
+  }
+  .dd.pulse .dd-trigger { animation: ddPulse 0.55s ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .dd-trigger, .dd-trigger::after, .dd-menu, .dd-item, .dd-check, .dd-label.swap {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+  .link-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(210, 190, 150, 0.7);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    word-break: break-all;
+    min-height: 48px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .link-box span { flex: 1; color: #6d5c40; }
+  .copy-btn {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    color: #6b4e1f;
+    background: rgba(255, 230, 180, 0.9);
+    border: 1px solid rgba(224, 169, 92, 0.55);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .copy-btn:hover { background: #ffe2ad; transform: translateY(-1px); }
+  .actions { margin-top: 28px; display: flex; gap: 12px; }
+  .toast {
+    position: fixed;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-16px);
+    padding: 12px 24px;
+    background: rgba(16, 185, 129, 0.95);
+    color: #fff;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    max-width: calc(100vw - 48px);
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    z-index: 300;
+    box-shadow: 0 10px 24px rgba(16, 185, 129, 0.28);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* 小屏时避开右上角「管理后台」按钮 */
+  @media (max-width: 560px) {
+    .toast { top: 70px; }
+  }
+
+  /* ---------- 管理后台 ---------- */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .admin-shell {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+  }
+  .admin-card {
+    padding: 28px 30px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 18px;
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: 0 12px 40px rgba(180, 150, 90, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  .admin-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .admin-head h2 { font-size: 1.3rem; }
+  .admin-head p { font-size: 0.85rem; color: #8a7a5c; margin-top: 4px; }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .card-head h3 { font-size: 1.05rem; }
+  .muted { font-size: 0.8rem; color: #9c8c6d; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: background 0.18s, transform 0.16s, box-shadow 0.18s, border-color 0.18s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary {
+    color: #5a3d0c;
+    background: linear-gradient(135deg, #ffd88a, #ffc266);
+    box-shadow: 0 5px 16px rgba(224, 169, 92, 0.3);
+  }
+  .btn-primary:hover { box-shadow: 0 9px 22px rgba(224, 169, 92, 0.42); transform: translateY(-1px); }
+  .btn-ghost {
+    color: #6b4e1f;
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(210, 190, 150, 0.85);
+  }
+  .btn-ghost:hover { background: #fffdf8; border-color: #e0a95c; }
+  .btn-danger {
+    color: #9b2c2c;
+    background: rgba(255, 236, 232, 0.9);
+    border-color: rgba(226, 160, 150, 0.8);
+  }
+  .btn-danger:hover { background: #ffdedb; border-color: #d98080; }
+  .btn-sm { padding: 7px 12px; font-size: 0.8rem; }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .form-field { margin-bottom: 16px; }
+  .form-field:last-child { margin-bottom: 0; }
+  .form-field label { font-weight: 500; }
+
+  /* 软件列表 */
+  .sw-list { display: flex; flex-direction: column; gap: 10px; }
+  .sw-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1.5px solid rgba(210, 190, 150, 0.7);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, transform 0.16s;
+  }
+  .sw-item:hover { background: #fffdf8; border-color: #e0a95c; transform: translateX(2px); }
+  .sw-item.active {
+    background: #fff8ea;
+    border-color: #e0a95c;
+    box-shadow: 0 0 0 3px rgba(224, 169, 92, 0.16);
+  }
+  .sw-item .sw-name { flex: 1; font-weight: 500; }
+  .sw-item .sw-count {
+    font-size: 0.75rem;
+    color: #8a7a5c;
+    background: rgba(224, 169, 92, 0.16);
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .empty {
+    padding: 24px;
+    text-align: center;
+    font-size: 0.88rem;
+    color: #9c8c6d;
+    border: 1.5px dashed rgba(210, 190, 150, 0.9);
+    border-radius: 12px;
+  }
+
+  /* 版本表 */
+  .ver-row {
+    display: grid;
+    grid-template-columns: 170px 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px dashed rgba(210, 190, 150, 0.65);
+  }
+
+
+  /* ---------- 下载页：链接卡片 ---------- */
+  .links-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 18px 0 4px;
+    min-height: 60px;
+    padding: 4px 8px 4px 2px;
+  }
+  /* 只有超过 3 条链接时才由 JS 加上 .scrollable，内部纵向滚动 */
+  .links-grid.scrollable {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    max-height: 360px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(224, 169, 92, 0.5) transparent;
+    /* 滚动条默认隐藏，只有滚动/悬停时才出现 */
+    scrollbar-gutter: stable;
+  }
+  .links-grid.scrollable::-webkit-scrollbar { width: 8px; }
+  .links-grid.scrollable::-webkit-scrollbar-track { background: transparent; }
+  .links-grid.scrollable::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 999px;
+  }
+  .links-grid.scrollable::-webkit-scrollbar-thumb:hover,
+  .links-grid.scrollable:hover::-webkit-scrollbar-thumb {
+    background: rgba(224, 169, 92, 0.55);
+  }
+  .link-item {
+    padding: 13px 15px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1.5px solid rgba(210, 190, 150, 0.75);
+    border-radius: 12px;
+    transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+  }
+  .link-item:hover {
+    border-color: #e0a95c;
+    box-shadow: 0 8px 20px rgba(224, 169, 92, 0.16);
+    transform: translateY(-1px);
+  }
+  .link-name {
+    margin-bottom: 9px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #4a3f2f;
+  }
+  .link-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .link-url {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 9px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: #6d5c40;
+    background: rgba(255, 253, 248, 0.92);
+    border: 1.5px solid rgba(210, 190, 150, 0.6);
+    border-radius: 9px;
+    white-space: nowrap;
+    /* 网址超出时可横向滚动查看，不显示滚动条；保持可选中复制 */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;          /* Firefox */
+    -ms-overflow-style: none;       /* 旧 Edge */
+    user-select: text;
+    cursor: text;
+    touch-action: pan-x;
+    transition: border-color 0.18s;
+  }
+  .link-url::-webkit-scrollbar { width: 0; height: 0; display: none; }
+  .link-url:hover { border-color: #e0a95c; }
+  .link-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+  .link-actions .copy-btn {
+    flex: 0 0 auto;
+    padding: 8px 13px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  @media (max-width: 620px) {
+    .link-row { flex-wrap: wrap; }
+    .link-url { flex: 1 1 100%; }
+    .link-actions { width: 100%; justify-content: flex-end; }
+  }
+
+  /* ---------- 管理后台：软件 + 链接 联动面板 ---------- */
+  .linkage {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    border: 1.5px solid rgba(210, 190, 150, 0.7);
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.5);
+  }
+  .linkage-side {
+    padding: 16px;
+    background: rgba(255, 248, 234, 0.6);
+    border-right: 1px solid rgba(210, 190, 150, 0.55);
+  }
+  .linkage-main {
+    padding: 16px;
+    min-width: 0;
+    transition: background 0.3s;
+  }
+  .linkage-main.flash { animation: paneFlash 0.55s ease; }
+  @keyframes paneFlash {
+    0% { background: rgba(255, 240, 205, 0.7); }
+    100% { background: transparent; }
+  }
+  .pane-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .pane-head-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .pane-title { font-size: 0.86rem; font-weight: 600; color: #6b4e1f; letter-spacing: 0.02em; }
+  .pane-title .count { margin-left: 4px; font-weight: 400; color: #9c8c6d; }
+  .sw-item { padding: 11px 12px; gap: 8px; }
+  .sw-item .sw-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sw-item .sw-count { font-size: 0.72rem; padding: 2px 8px; }
+  .sw-item .sw-arrow {
+    color: #d8c49a;
+    font-size: 1rem;
+    line-height: 1;
+    transition: transform 0.18s, color 0.18s;
+  }
+  .sw-item.active .sw-arrow { color: #e0a95c; transform: translateX(2px); }
+  .sw-item .btn-sm { padding: 5px 9px; font-size: 0.75rem; }
+
+  /* 版本标签 */
+  .ver-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .ver-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 8px 6px 13px;
+    font-size: 0.82rem;
+    color: #6b4e1f;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1.5px solid rgba(210, 190, 150, 0.75);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, transform 0.16s;
+  }
+  .ver-tab:hover { background: #fffdf8; border-color: #e0a95c; transform: translateY(-1px); }
+  .ver-tab.active {
+    font-weight: 600;
+    background: #fff8ea;
+    border-color: #e0a95c;
+    box-shadow: 0 0 0 3px rgba(224, 169, 92, 0.16);
+  }
+  .ver-tab .x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    font-size: 0.8rem;
+    line-height: 1;
+    color: #a99878;
+    background: rgba(224, 169, 92, 0.12);
+    border-radius: 50%;
+    transition: background 0.15s, color 0.15s;
+  }
+  .ver-tab .x:hover { color: #9b2c2c; background: rgba(226, 160, 150, 0.3); }
+  .ver-links-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(210, 190, 150, 0.65);
+  }
+
+  /* 单条链接编辑行：名称（文字）+ 直链框 + 备用框 + 删除 */
+  .link-edit-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 10px 0;
+    border-bottom: 1px dashed rgba(210, 190, 150, 0.6);
+  }
+  .link-edit-row:last-child { border-bottom: none; }
+  .le-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 104px;
+    max-width: 168px;
+    flex: 0 1 auto;
+  }
+  .le-name-text {
+    font-size: 0.83rem;
+    font-weight: 500;
+    color: #5d4a2a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .le-edit {
+    flex: 0 0 auto;
+    padding: 2px 5px;
+    font-size: 0.78rem;
+    line-height: 1;
+    color: #b9a988;
+    background: transparent;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+  .le-edit:hover { color: #e0a95c; background: rgba(224, 169, 92, 0.16); }
+  .le-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1 1 240px;
+    min-width: 0;
+    margin: 0;
+  }
+  .le-field > span {
+    flex: 0 0 auto;
+    font-size: 0.74rem;
+    color: #9c8c6d;
+    white-space: nowrap;
+  }
+  .le-field input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 7px 10px;
+    font-size: 0.82rem;
+  }
+  @media (max-width: 760px) {
+    .linkage { grid-template-columns: 1fr; }
+    .linkage-side {
+      border-right: none;
+      border-bottom: 1px solid rgba(210, 190, 150, 0.55);
+    }
+  }
+
+  /* 后台链接列表：条目多时内部滚动 */
+  #linksList {
+    max-height: min(40vh, 360px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(224, 169, 92, 0.45) transparent;
+  }
+  #linksList::-webkit-scrollbar { width: 8px; }
+  #linksList::-webkit-scrollbar-track { background: transparent; }
+  #linksList::-webkit-scrollbar-thumb { background: rgba(224, 169, 92, 0.4); border-radius: 999px; }
+  #linksList::-webkit-scrollbar-thumb:hover { background: rgba(224, 169, 92, 0.72); }
+
+
+  /* 存储未绑定提示 */
+  .notice {
+    display: none;
+    margin: 0 0 20px;
+    padding: 12px 14px;
+    font-size: 0.83rem;
+    line-height: 1.65;
+    color: #8a5a1f;
+    background: rgba(255, 236, 200, 0.78);
+    border: 1px solid rgba(224, 169, 92, 0.55);
+    border-radius: 11px;
+  }
+  .notice.show { display: block; }
+  .notice code {
+    padding: 1px 5px;
+    font-size: 0.95em;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 5px;
+  }
+
+  /* 遮罩 / 弹窗 */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(74, 63, 47, 0.32);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .overlay.show { display: flex; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    width: 100%;
+    max-width: 420px;
+    padding: 32px;
+    background: rgba(255, 253, 248, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 18px;
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    box-shadow: 0 30px 70px rgba(120, 95, 50, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    animation: popIn 0.26s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to { opacity: 1; transform: none; }
+  }
+  .modal h3 { font-size: 1.15rem; margin-bottom: 6px; }
+  .modal .hint { font-size: 0.82rem; color: #8a7a5c; margin-bottom: 20px; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .modal-actions .btn { flex: 1; justify-content: center; }
+  .err {
+    font-size: 0.8rem;
+    color: #b4453a;
+    min-height: 18px;
+    margin-top: 8px;
+  }
+
+  .confirm-modal { max-width: 380px; }
+  .confirm-modal p { font-size: 0.9rem; color: #6d5c40; line-height: 1.6; }
+
+  /* 输入弹窗（替代浏览器 prompt） */
+  .input-modal { max-width: 440px; }
+  .input-modal .field-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #7a6a4d;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .input-modal input {
+    width: 100%;
+    padding: 12px 14px;
+    font: inherit;
+    font-size: 0.95rem;
+    color: #4a3f2f;
+    background: rgba(255, 255, 255, 0.86);
+    border: 1.5px solid rgba(210, 190, 150, 0.8);
+    border-radius: 11px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-modal input:focus {
+    border-color: #e0a95c;
+    box-shadow: 0 0 0 4px rgba(224, 169, 92, 0.18);
+  }
+  .input-modal .step-of {
+    font-size: 0.75rem;
+    color: #a08e6d;
+    font-weight: 400;
+    margin-left: 6px;
+  }
+
+  @media (max-width: 720px) {
+    .grid2 { grid-template-columns: 1fr; }
+    .ver-row { grid-template-columns: 1fr; }
+    .ver-actions { justify-content: flex-end; }
+    .topbar { top: 12px; right: 12px; }
+    .admin-card { padding: 22px 18px; }
+  }
+  @media (max-width: 480px) {
+    .row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 右上角：管理后台入口 -->
+  <div class="topbar">
+    <button class="admin-entry" id="adminEntry" type="button">
+      <span class="ico">⚙</span><span>管理后台</span>
+    </button>
+  </div>
+
+  <!-- ============ 下载页 ============ -->
+  <div class="view active" id="viewDownload">
+    <div class="panel">
+      <h1 id="siteTitle">📦 软件下载中心</h1>
+      <p class="subtitle" id="siteSubtitle">选择软件，复制链接或直接下载</p>
+
+      <!-- 软件搜索 -->
+      <div class="form-field" style="margin-bottom:12px;">
+        <input type="text" id="searchInput"
+          placeholder="输入软件名称，例如：微信，QQ"
+          style="width:100%; padding:10px 12px; font-size:0.95rem; color:#4a3f2f; background:rgba(255,255,255,0.82); border:1.5px solid rgba(210,190,150,0.75); border-radius:11px; outline:none; transition: border-color 0.2s, box-shadow 0.2s; box-sizing:border-box;">
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="software">软件名称</label>
+          <select id="software"></select>
+        </div>
+        <div class="field">
+          <label for="version">选择版本</label>
+          <select id="version"></select>
+        </div>
+      </div>
+
+      <!-- 链接列表容器 -->
+      <div class="links-grid" id="linksContainer"></div>
+    </div>
+  </div>
+
+  <!-- ============ 管理后台 ============ -->
+  <div class="view" id="viewAdmin">
+    <div class="admin-shell">
+
+      <div class="admin-card">
+        <div class="admin-head">
+          <div>
+            <h2>🛠 管理后台</h2>
+            <p>修改页面文案、管理软件与版本、维护下载链接。修改会写入 EdgeOne Blob 存储，对所有访客生效。</p>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-ghost" id="btnPwd" type="button">修改密码</button>
+            <button class="btn btn-ghost" id="btnBack" type="button">← 返回下载页</button>
+          </div>
+        </div>
+
+        <div class="notice" id="storageNotice">
+          ⚠️ Blob 存储不可用，当前为只读模式，修改无法保存。
+          请确认部署时执行了 <code>npm install</code>（需要 <code>@edgeone/pages-blob</code>），
+          然后访问 <code>/api/health</code> 检查是否返回 <code>storage: "blob"</code>。
+        </div>
+
+        <div class="card-head">
+          <h3>页面信息</h3>
+          <span class="muted">显示在下载页顶部</span>
+        </div>
+        <div class="grid2">
+          <div class="form-field">
+            <label for="fTitle">软件名称 / 页面标题</label>
+            <input type="text" id="fTitle" placeholder="📦 软件下载中心">
+          </div>
+          <div class="form-field">
+            <label for="fSubtitle">副标题说明</label>
+            <input type="text" id="fSubtitle" placeholder="选择软件，复制链接或直接下载">
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="card-head">
+          <div>
+            <h3>软件与下载链接</h3>
+            <span class="muted">左侧点选软件，右侧即显示它的下载链接，两者是同一份配置</span>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btnAddSoftware" type="button">＋ 新增软件</button>
+        </div>
+
+        <div class="linkage">
+          <div class="linkage-side">
+            <div class="pane-head">
+              <div class="pane-head-text">
+                <span class="pane-title">软件列表<span class="count" id="swCount"></span></span>
+              </div>
+            </div>
+            <div class="sw-list" id="swList"></div>
+          </div>
+
+          <div class="linkage-main" id="linkageMain">
+            <div class="pane-head">
+              <div class="pane-head-text">
+                <span class="pane-title">版本与下载链接</span>
+                <span class="muted" id="linkHint">请先在左侧选择软件</span>
+              </div>
+              <button class="btn btn-primary btn-sm" id="btnAddVersion" type="button">＋ 新增版本</button>
+            </div>
+
+            <div class="ver-tabs" id="verTabs"></div>
+
+            <div class="ver-links-head">
+              <span class="muted" id="verLinkHint">当前版本：-</span>
+              <button class="btn btn-ghost btn-sm" id="btnAddLink" type="button">＋ 新增链接</button>
+            </div>
+
+            <div id="linksList"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 登录弹窗 -->
+  <div class="overlay" id="loginOverlay">
+    <div class="modal">
+      <h3>管理员登录</h3>
+      <p class="hint">密码由服务端校验：默认 <code>admin</code>，部署时可通过环境变量
+        <code>ADMIN_PASSWORD</code> 指定，登录后也能在「修改密码」里更换。</p>
+      <div class="form-field">
+        <label for="pwdInput">密码</label>
+        <input type="password" id="pwdInput" placeholder="请输入管理员密码" autocomplete="current-password">
+      </div>
+      <div class="err" id="loginErr"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="btnLoginCancel" type="button">取消</button>
+        <button class="btn btn-primary" id="btnLoginOk" type="button">进入后台</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 输入弹窗：替代浏览器自带的 prompt -->
+  <div class="overlay" id="inputOverlay">
+    <div class="modal input-modal">
+      <h3 id="inputTitle">请输入<span class="step-of" id="inputStep"></span></h3>
+      <p class="hint" id="inputHint"></p>
+      <label class="field-label" for="inputField" id="inputLabel">名称</label>
+      <input type="text" id="inputField" autocomplete="off">
+      <div class="err" id="inputErr"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="btnInputCancel" type="button">取消</button>
+        <button class="btn btn-primary" id="btnInputOk" type="button">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 通用确认弹窗 -->
+  <div class="overlay" id="confirmOverlay">
+    <div class="modal confirm-modal">
+      <h3 id="confirmTitle">确认操作</h3>
+      <p id="confirmText"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="btnConfirmCancel" type="button">取消</button>
+        <button class="btn btn-danger" id="btnConfirmOk" type="button">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 修改密码弹窗 -->
+  <div class="overlay" id="pwdOverlay">
+    <div class="modal">
+      <h3>修改管理密码</h3>
+      <p class="hint">新密码保存在 EdgeOne Blob 存储中，保存后立即生效。
+        若项目尚未绑定 Blob 存储，页面无法修改密码，请改环境变量 <code>ADMIN_PASSWORD</code> 后重新部署。</p>
+      <div class="form-field">
+        <label for="oldPwd">当前密码</label>
+        <input type="password" id="oldPwd" autocomplete="current-password">
+      </div>
+      <div class="form-field">
+        <label for="newPwd">新密码（至少 4 位）</label>
+        <input type="password" id="newPwd" autocomplete="new-password">
+      </div>
+      <div class="err" id="pwdErr"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="btnPwdCancel" type="button">取消</button>
+        <button class="btn btn-primary" id="btnPwdOk" type="button">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">已保存</div>
+
+  <script>
+    /* ========== 默认数据（软件 → 版本 → 链接） ========== */
+    const DEFAULT_DATA = {
+      title: '📦 软件下载中心',
+      subtitle: '选择软件与版本，复制链接或直接下载',
+      softwares: [
+        {
+          name: '微信 PC 版',
+          versions: [
+            {
+              version: '3.9.12',
+              links: [
+                { name: '直链下载', url: 'https://dldir1.qq.com/weixin/Windows/WeChatSetup.exe', backupUrl: 'https://dldir1v6.qq.com/weixin/Windows/WeChatSetup.exe' },
+                { name: '备用链接', url: 'https://dldir1.qq.com/weixin/Windows/WeChatSetup_3.9.10.exe', backupUrl: '' },
+              ],
+            },
+            {
+              version: '3.9.10',
+              links: [
+                { name: '直链下载', url: 'https://dldir1.qq.com/weixin/Windows/WeChatSetup_3.9.10.exe', backupUrl: '' },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'QQ NT',
+          versions: [
+            {
+              version: '9.9.15',
+              links: [
+                { name: '直链下载', url: 'https://dldir1.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.15_240701_x64_01.exe', backupUrl: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.15_240701_x64_01.exe' },
+              ],
+            },
+            {
+              version: '9.9.12',
+              links: [
+                { name: '直链下载', url: 'https://dldir1.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.12_240612_x64_01.exe', backupUrl: '' },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'WPS Office',
+          versions: [
+            {
+              version: '2024 夏季版',
+              links: [
+                { name: '直链下载', url: 'https://package.wps.cn/setup/wps_setup.exe', backupUrl: 'https://dl.wpscdn.cn/setup/wps_setup.exe' },
+                { name: '备用镜像', url: 'https://dl.wpscdn.cn/setup/wps_setup.exe', backupUrl: '' },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    // 与后端保持一致的数量上限
+    const LIMITS = { softwares: 200, versions: 200, links: 100 };
+
+    const SESSION_KEY = 'download-page-auth-v1';
+
+    /* ========== 数据读写（走 EdgeOne Pages Functions + Blob 存储） ========== */
+    let state = clone(DEFAULT_DATA);
+    let selectedSw = 0;
+    let selectedVer = 0;
+    // 管理口令只保存在内存里，用于带 X-Admin-Password 头写入
+    let adminPassword = '';
+    // 服务端存储状态：'ready' 可写，'none' 表示未绑定存储（只读）
+    let storageMode = 'ready';
+
+    function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+    function normalize(payload) {
+      if (!payload || !Array.isArray(payload.softwares)) return clone(DEFAULT_DATA);
+      return {
+        title: typeof payload.title === 'string' ? payload.title : DEFAULT_DATA.title,
+        subtitle: typeof payload.subtitle === 'string' ? payload.subtitle : DEFAULT_DATA.subtitle,
+        softwares: payload.softwares
+          .map((s) => {
+            let versions = [];
+            if (Array.isArray(s?.versions)) {
+              versions = s.versions
+                .filter((v) => v && v.version)
+                .map((v) => {
+                  let links = [];
+                  if (Array.isArray(v.links)) {
+                    links = v.links
+                      .filter((l) => l)
+                      .map((l) => ({
+                        name: String(l.name || ''),
+                        url: String(l.url || ''),
+                        backupUrl: String(l.backupUrl || ''),
+                      }));
+                  } else if (v.url) {
+                    // 最早的版本直链结构
+                    links = [{ name: '直链下载', url: String(v.url || ''), backupUrl: String(v.backupUrl || '') }];
+                  }
+                  return { version: String(v.version), links };
+                });
+            } else if (Array.isArray(s?.links)) {
+              // 上一版纯链接结构 → 归入「最新版本」
+              versions = [{
+                version: '最新版本',
+                links: s.links
+                  .filter((l) => l)
+                  .map((l) => ({
+                    name: String(l.name || ''),
+                    url: String(l.url || ''),
+                    backupUrl: String(l.backupUrl || ''),
+                  })),
+              }];
+            }
+            return {
+              name: String(s.name || '未命名软件'),
+              versions,
+            };
+          })
+          .filter((s) => s.name)
+          .slice(0, LIMITS.softwares),
+      };
+    }
+
+    async function fetchData() {
+      const res = await fetch('/api/data', { headers: { accept: 'application/json' } });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const body = await res.json();
+      if (!body.ok) throw new Error(body.error || '读取失败');
+      storageMode = (body.storage === 'blob' || body.storage === 'kv') ? 'ready' : 'none';
+      updateStorageNotice();
+      return normalize(body.data);
+    }
+
+    // 未绑定存储时给出只读提示
+    function updateStorageNotice() {
+      const el = $('storageNotice');
+      if (el) el.classList.toggle('show', storageMode !== 'ready');
+    }
+
+    // 把当前 state 提交到服务端
+    async function saveData() {
+      if (!adminPassword) {
+        showToast('登录状态已失效，请重新登录');
+        return false;
+      }
+      if (storageMode !== 'ready') {
+        showToast('未绑定存储（Blob/KV），修改无法保存');
+        return false;
+      }
+      try {
+        const res = await fetch('/api/data', {
+          method: 'PUT',
+          headers: {
+            'content-type': 'application/json',
+            'x-admin-password': adminPassword,
+          },
+          body: JSON.stringify(state),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body.ok) {
+          showToast(body.error || '保存失败');
+          return false;
+        }
+        state = normalize(body.data);
+        showToast('已保存');
+        return true;
+      } catch (e) {
+        showToast('保存失败：' + e.message);
+        return false;
+      }
+    }
+
+    async function loginRequest(pwd) {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: pwd }),
+      });
+      const body = await res.json().catch(() => ({}));
+      return res.ok && body.ok;
+    }
+
+    /* ========== 通用工具 ========== */
+    const $ = (id) => document.getElementById(id);
+    const toast = $('toast');
+    let toastTimer;
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+
+    /* ========== 搜索功能 ========== */
+    function applySearchFilter() {
+      const searchInput = document.getElementById('searchInput');
+      const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      let hasMatch = false;
+      Array.from(softwareSel.options).forEach(opt => {
+        const name = opt.text.toLowerCase();
+        if (name.includes(term)) {
+          opt.style.display = '';
+          hasMatch = true;
+        } else {
+          opt.style.display = 'none';
+        }
+      });
+      if (!hasMatch) {
+        // 没有匹配项：清空链接区并给出提示
+        if (linksContainer) {
+          linksContainer.innerHTML = '<p style="text-align:center;color:#a08e6d;margin:20px 0;">没有找到匹配的软件</p>';
+        }
+      } else {
+        // 当前选中的软件若仍匹配就保留，否则跳到第一个匹配项
+        const cur = softwareSel.selectedIndex;
+        const curVisible = cur >= 0 && softwareSel.options[cur] &&
+          softwareSel.options[cur].style.display !== 'none';
+        let target = curVisible ? cur : -1;
+        if (target < 0) {
+          for (let i = 0; i < softwareSel.options.length; i++) {
+            if (softwareSel.options[i].style.display !== 'none') { target = i; break; }
+          }
+        }
+        if (target >= 0) {
+          const changed = softwareSel.selectedIndex !== target;
+          softwareSel.selectedIndex = target;
+          if (changed) {
+            // 软件变了才重置版本，避免输入时版本被反复重置
+            selectedSw = target;
+            selectedVer = 0;
+            fillVersions();
+          } else {
+            renderLinks();
+          }
+        }
+      }
+      if (softwareSel._dd) softwareSel._dd.sync();
+    }
+
+    // 为搜索输入绑定事件（确保 DOM 已加载）
+    if (document.readyState !== 'loading') {
+      const sInput = document.getElementById('searchInput');
+      if (sInput) sInput.addEventListener('input', applySearchFilter);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        const sInput = document.getElementById('searchInput');
+        if (sInput) sInput.addEventListener('input', applySearchFilter);
+      });
+    }
+
+    /* ========== 视图切换 ========== */
+    function showView(name) {
+      $('viewDownload').classList.toggle('active', name === 'download');
+      $('viewAdmin').classList.toggle('active', name === 'admin');
+      $('adminEntry').style.display = name === 'admin' ? 'none' : '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ========== 下载页渲染 ========== */
+    const softwareSel = $('software');
+    const versionSel = $('version');
+    const linksContainer = document.getElementById('linksContainer');
+
+    function renderSite() {
+      $('siteTitle').textContent = state.title || DEFAULT_DATA.title;
+      $('siteSubtitle').textContent = state.subtitle || '';
+      document.title = (state.title || DEFAULT_DATA.title).replace(/^[^\w\u4e00-\u9fa5]+/, '').trim() || '软件下载中心';
+    }
+
+    function currentSoftware() {
+      return state.softwares[Number(softwareSel.value)] || null;
+    }
+
+    function currentVersion() {
+      const sw = currentSoftware();
+      if (!sw || !sw.versions || !sw.versions.length) return null;
+      return sw.versions[selectedVer] || sw.versions[0] || null;
+    }
+
+    function fillSoftware() {
+      if (!state.softwares.length) {
+        softwareSel.innerHTML = '';
+        versionSel.innerHTML = '';
+        if (softwareSel._dd) softwareSel._dd.sync();
+        if (versionSel._dd) versionSel._dd.sync();
+        if (linksContainer) {
+          linksContainer.innerHTML = '<p style="text-align:center;color:#a08e6d;margin:20px 0;">暂无软件，请在管理后台添加。</p>';
+        }
+        return;
+      }
+      if (selectedSw >= state.softwares.length) selectedSw = 0;
+      softwareSel.innerHTML = state.softwares.map((s, i) =>
+        `<option value="${i}">${escapeHtml(s.name)}</option>`
+      ).join('');
+      softwareSel.value = String(selectedSw);
+      if (softwareSel._dd) softwareSel._dd.sync();
+      // 软件确定后填充版本，并应用搜索过滤
+      fillVersions();
+      applySearchFilter();
+    }
+
+    // 按当前软件填充版本下拉
+    function fillVersions() {
+      const sw = currentSoftware();
+      if (!sw || !sw.versions || !sw.versions.length) {
+        versionSel.innerHTML = '<option value="">暂无版本</option>';
+        selectedVer = 0;
+        if (versionSel._dd) versionSel._dd.sync();
+        renderLinks();
+        return;
+      }
+      if (selectedVer >= sw.versions.length) selectedVer = 0;
+      if (selectedVer < 0) selectedVer = 0;
+      versionSel.innerHTML = sw.versions.map((v, i) =>
+        `<option value="${i}">${escapeHtml(v.version || '未命名版本')}</option>`
+      ).join('');
+      versionSel.value = String(selectedVer);
+      if (versionSel._dd) versionSel._dd.sync();
+      renderLinks();
+    }
+
+    // 渲染当前版本下的链接
+    function renderLinks() {
+      if (!linksContainer) return;
+      const sw = currentSoftware();
+      if (!sw) {
+        linksContainer.innerHTML = '<p style="text-align:center;color:#a08e6d;margin:20px 0;">暂无软件，请在管理后台添加。</p>';
+        return;
+      }
+      if (!sw.versions || !sw.versions.length) {
+        linksContainer.innerHTML = '<p style="text-align:center;color:#a08e6d;margin:20px 0;">该软件暂无版本，请在管理后台添加版本。</p>';
+        return;
+      }
+      const ver = currentVersion();
+      const links = (ver && Array.isArray(ver.links)) ? ver.links : [];
+      if (!links.length) {
+        linksContainer.innerHTML = '<p style="text-align:center;color:#a08e6d;margin:20px 0;">该版本暂无下载链接，请在管理后台添加。</p>';
+        return;
+      }
+      linksContainer.innerHTML = '';
+      linksContainer.scrollTop = 0;
+      links.forEach((link) => {
+        const div = document.createElement('div');
+        div.className = 'link-item';
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'link-name';
+        nameEl.textContent = link.name || '未命名链接';
+
+        // 一行：链接框 + 操作按钮
+        const row = document.createElement('div');
+        row.className = 'link-row';
+
+        const urlEl = document.createElement('div');
+        urlEl.className = 'link-url';
+        urlEl.textContent = link.url || '未填写链接';
+        urlEl.title = link.url || '';
+        if (!link.url) urlEl.style.color = '#b3a58c';
+
+        const actions = document.createElement('div');
+        actions.className = 'link-actions';
+
+        const cp = document.createElement('button');
+        cp.className = 'copy-btn';
+        cp.type = 'button';
+        cp.textContent = '复制链接';
+        cp.addEventListener('click', () => copyText(link.url));
+
+        actions.appendChild(cp);
+        row.appendChild(urlEl);
+        row.appendChild(actions);
+        div.appendChild(nameEl);
+        div.appendChild(row);
+        linksContainer.appendChild(div);
+      });
+      // 超过 3 条才启用纵向滚动
+      applyLinksScroll();
+    }
+
+    // 只在链接超过 3 条时给容器加滚动，并按「前 3 条的实际高度」设上限
+    function applyLinksScroll() {
+      if (!linksContainer) return;
+      const items = linksContainer.children;
+      if (items.length <= 3) {
+        linksContainer.classList.remove('scrollable');
+        linksContainer.style.maxHeight = '';
+        return;
+      }
+      linksContainer.classList.add('scrollable');
+      const first = items[0];
+      const fourth = items[3];
+      // 用 offsetTop 差值量出「前 3 条 + 间距」的高度（不受滚动位置影响）
+      let h = 0;
+      if (first && fourth) {
+        const d = Number(fourth.offsetTop) - Number(first.offsetTop);
+        if (Number.isFinite(d) && d > 0) h = d;
+      }
+      // 兜底：用 getBoundingClientRect 再量一次
+      if (!h && first && fourth &&
+          typeof fourth.getBoundingClientRect === 'function' &&
+          typeof linksContainer.getBoundingClientRect === 'function') {
+        const cRect = linksContainer.getBoundingClientRect();
+        const fRect = fourth.getBoundingClientRect();
+        const d = Math.round(fRect.top - cRect.top);
+        if (Number.isFinite(d) && d > 0) h = d;
+      }
+      linksContainer.style.maxHeight = h > 0 ? h + 'px' : '';
+    }
+
+    // 窗口尺寸变化时重新计算（换行会改变单条高度）
+    window.addEventListener('resize', () => {
+      if (linksContainer && linksContainer.classList.contains('scrollable')) {
+        applyLinksScroll();
+      }
+    });
+
+    // 复制文本（带降级方案）
+    function copyText(url) {
+      if (!url) {
+        showToast('暂无可复制的链接');
+        return;
+      }
+      const fallback = () => {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); showToast('链接已复制'); }
+        catch (e) { showToast('复制失败，请手动复制'); }
+        document.body.removeChild(ta);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => showToast('链接已复制')).catch(fallback);
+      } else {
+        fallback();
+      }
+    }
+
+    /* ========== 自定义下拉 ========== */
+    const dropdowns = [];
+    function closeAllDropdowns(except) {
+      dropdowns.forEach((d) => { if (d.root !== except) d.close(); });
+    }
+
+    function setupDropdown(sel) {
+      const root = document.createElement('div');
+      root.className = 'dd';
+      sel.parentNode.insertBefore(root, sel);
+      root.appendChild(sel);
+      sel.tabIndex = -1;
+
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'dd-trigger';
+      trigger.setAttribute('aria-haspopup', 'listbox');
+      trigger.setAttribute('aria-expanded', 'false');
+
+      const label = document.createElement('span');
+      label.className = 'dd-label';
+      trigger.appendChild(label);
+
+      const menu = document.createElement('div');
+      menu.className = 'dd-menu';
+      menu.id = sel.id + '-listbox';
+      menu.setAttribute('role', 'listbox');
+      trigger.setAttribute('aria-controls', menu.id);
+
+      root.appendChild(trigger);
+      root.appendChild(menu);
+
+      let active = -1;
+
+      function highlight() {
+        menu.querySelectorAll('.dd-item').forEach((el) => {
+          el.classList.toggle('active', Number(el.dataset.index) === active);
+        });
+      }
+      function scrollActive() {
+        const cur = menu.querySelector('.dd-item.active');
+        if (cur) cur.scrollIntoView({ block: 'nearest' });
+      }
+      function sync() {
+        label.textContent = sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : '';
+        menu.innerHTML = Array.from(sel.options).map((o, i) => {
+          const on = i === sel.selectedIndex;
+          return `<div class="dd-item${on ? ' selected' : ''}" role="option"
+                     aria-selected="${on}" data-index="${i}" style="--i:${i}">
+                    <span>${escapeHtml(o.text)}</span><span class="dd-check"></span>
+                  </div>`;
+        }).join('');
+        active = sel.selectedIndex;
+        highlight();
+      }
+      function open() {
+        closeAllDropdowns(root);
+        const rect = trigger.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        root.classList.toggle('up', spaceBelow < 300 && rect.top > 300);
+        root.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+        active = sel.selectedIndex;
+        highlight();
+        scrollActive();
+      }
+      function close() {
+        root.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+      function choose(i) {
+        if (i < 0 || i >= sel.options.length) return;
+        sel.selectedIndex = i;
+        sync();
+        label.classList.remove('swap');
+        void label.offsetWidth;
+        label.classList.add('swap');
+        close();
+        trigger.focus();
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (root.classList.contains('open')) close(); else open();
+      });
+      menu.addEventListener('click', (e) => {
+        const item = e.target.closest('.dd-item');
+        if (item) choose(Number(item.dataset.index));
+      });
+      menu.addEventListener('mousemove', (e) => {
+        const item = e.target.closest('.dd-item');
+        if (item) {
+          const i = Number(item.dataset.index);
+          if (i !== active) { active = i; highlight(); }
+        }
+      });
+      root.addEventListener('keydown', (e) => {
+        const isOpen = root.classList.contains('open');
+        switch (e.key) {
+          case 'ArrowDown':
+            e.preventDefault();
+            if (!isOpen) return open();
+            active = Math.min(active + 1, sel.options.length - 1);
+            highlight(); scrollActive();
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            if (!isOpen) return open();
+            active = Math.max(active - 1, 0);
+            highlight(); scrollActive();
+            break;
+          case 'Enter': case ' ':
+            e.preventDefault();
+            if (isOpen) choose(active); else open();
+            break;
+          case 'Escape':
+            if (isOpen) { e.preventDefault(); close(); trigger.focus(); }
+            break;
+          case 'Tab':
+            if (isOpen) close();
+            break;
+        }
+      });
+
+      const api = { root, open, close, sync, choose };
+      sel._dd = api;
+      dropdowns.push(api);
+      sync();
+      return api;
+    }
+
+    function pulse(el) {
+      el.classList.remove('pulse');
+      void el.offsetWidth;
+      el.classList.add('pulse');
+      el.addEventListener('animationend', () => el.classList.remove('pulse'), { once: true });
+    }
+
+    document.addEventListener('click', () => closeAllDropdowns(null));
+
+    /* ========== 管理后台渲染 ========== */
+    function renderAdmin() {
+      $('fTitle').value = state.title;
+      $('fSubtitle').value = state.subtitle;
+      updateStorageNotice();
+      renderSwList();
+      renderVersionPanel();
+    }
+
+    // 右侧面板高亮一下，强化「左侧选中 → 右侧联动」的感知
+    function flashPane() {
+      const pane = $('linkageMain');
+      if (!pane) return;
+      pane.classList.remove('flash');
+      void pane.offsetWidth;
+      pane.classList.add('flash');
+    }
+
+    function renderSwList() {
+      const box = $('swList');
+      const countEl = $('swCount');
+      if (countEl) countEl.textContent = state.softwares.length ? String(state.softwares.length) : '';
+      if (!state.softwares.length) {
+        box.innerHTML = '<div class="empty">还没有软件，点击上方「＋ 新增软件」开始添加</div>';
+        return;
+      }
+      box.innerHTML = state.softwares.map((s, i) => `
+        <div class="sw-item${i === selectedSw ? ' active' : ''}" data-index="${i}" title="${escapeHtml(s.name)}">
+          <span class="sw-name">${escapeHtml(s.name)}</span>
+          <span class="sw-count" title="${s.versions.length} 个版本">${s.versions.length} 个版本</span>
+          <span class="sw-arrow" aria-hidden="true">›</span>
+          <button class="btn btn-danger btn-sm" data-del="${i}" type="button">删除</button>
+        </div>
+      `).join('');
+
+      box.querySelectorAll('.sw-item').forEach((el) => {
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('[data-del]')) return;
+          const next = Number(el.dataset.index);
+          if (next === selectedSw) return;
+          selectedSw = next;
+          selectedVer = 0;
+          renderSwList();
+          renderVersionPanel();
+          flashPane();
+        });
+      });
+      box.querySelectorAll('[data-del]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const i = Number(btn.dataset.del);
+          const name = state.softwares[i].name;
+          confirmAction('删除软件', `确定要删除「${name}」及其全部版本、链接吗？此操作不可撤销。`, () => {
+            state.softwares.splice(i, 1);
+            if (selectedSw >= state.softwares.length) selectedSw = Math.max(0, state.softwares.length - 1);
+            selectedVer = 0;
+            saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); } });
+          });
+        });
+      });
+    }
+
+    // 右侧：版本标签 + 当前版本的下载链接
+    function renderVersionPanel() {
+      const box = $('linksList');
+      const tabs = $('verTabs');
+      const sw = state.softwares[selectedSw];
+      const btnVer = $('btnAddVersion');
+      const btnLink = $('btnAddLink');
+
+      if (!sw) {
+        $('linkHint').textContent = '请先在左侧选择软件';
+        $('verLinkHint').textContent = '当前版本：-';
+        tabs.innerHTML = '';
+        box.innerHTML = '<div class="empty">左侧还没有软件，先新增一个</div>';
+        btnVer.disabled = true; btnVer.style.opacity = '0.5';
+        btnLink.disabled = true; btnLink.style.opacity = '0.5';
+        return;
+      }
+
+      btnVer.disabled = false; btnVer.style.opacity = '';
+      if (!Array.isArray(sw.versions)) sw.versions = [];
+      if (selectedVer >= sw.versions.length) selectedVer = Math.max(0, sw.versions.length - 1);
+      if (selectedVer < 0) selectedVer = 0;
+
+      $('linkHint').textContent = `当前软件：${sw.name} · ${sw.versions.length} 个版本`;
+
+      // 版本标签
+      tabs.innerHTML = sw.versions.length
+        ? sw.versions.map((v, i) => `
+            <span class="ver-tab${i === selectedVer ? ' active' : ''}" data-ver="${i}">
+              ${escapeHtml(v.version || '未命名版本')}
+              <span class="x" data-delver="${i}" title="删除该版本" role="button">×</span>
+            </span>
+          `).join('')
+        : '<span class="muted">还没有版本，点击右上角「＋ 新增版本」添加</span>';
+
+      tabs.querySelectorAll('.ver-tab').forEach((tab) => {
+        tab.addEventListener('click', (e) => {
+          if (e.target.closest('[data-delver]')) return;
+          const i = Number(tab.dataset.ver);
+          if (i === selectedVer) return;
+          selectedVer = i;
+          renderVersionPanel();
+          flashPane();
+        });
+      });
+      tabs.querySelectorAll('[data-delver]').forEach((x) => {
+        x.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const i = Number(x.dataset.delver);
+          const v = sw.versions[i];
+          if (!v) return;
+          confirmAction('删除版本', `确定删除版本「${v.version}」及其 ${v.links.length} 个链接吗？`, () => {
+            sw.versions.splice(i, 1);
+            if (selectedVer >= sw.versions.length) selectedVer = Math.max(0, sw.versions.length - 1);
+            saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); } });
+          });
+        });
+      });
+
+      const ver = sw.versions[selectedVer];
+      if (!ver) {
+        $('verLinkHint').textContent = '当前版本：-';
+        box.innerHTML = '<div class="empty">先新增一个版本，再为它添加下载链接</div>';
+        btnLink.disabled = true; btnLink.style.opacity = '0.5';
+        return;
+      }
+
+      btnLink.disabled = false; btnLink.style.opacity = '';
+      const links = Array.isArray(ver.links) ? ver.links : (ver.links = []);
+      $('verLinkHint').textContent = `版本「${ver.version}」的下载链接 · ${links.length} 个`;
+
+      if (!links.length) {
+        box.innerHTML = '<div class="empty">该版本还没有下载链接，点击「＋ 新增链接」添加</div>';
+        return;
+      }
+
+      box.innerHTML = links.map((link, i) => `
+        <div class="link-edit-row">
+          <div class="le-name" title="${escapeHtml(link.name || '未命名链接')}">
+            <span class="le-name-text">${escapeHtml(link.name || '未命名链接')}</span>
+            <button class="le-edit" data-rename="${i}" type="button" title="重命名">✎</button>
+          </div>
+          <label class="le-field">
+            <input type="text" data-k="url" data-i="${i}" value="${escapeHtml(link.url)}" placeholder="下载链接地址">
+          </label>
+          <button class="btn btn-danger btn-sm" data-delv="${i}" type="button">删除</button>
+        </div>
+      `).join('');
+
+      box.querySelectorAll('input[data-k]').forEach((inp) => {
+        inp.addEventListener('change', () => {
+          const i = Number(inp.dataset.i);
+          const k = inp.dataset.k;
+          const val = inp.value.trim();
+          links[i][k] = val;
+          saveData().then((ok) => { if (ok) { fillSoftware(); renderSwList(); } });
+        });
+      });
+      // 重命名：名称不占输入框，点 ✎ 弹窗改
+      box.querySelectorAll('[data-rename]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const i = Number(btn.dataset.rename);
+          const link = links[i];
+          if (!link) return;
+          const next = await askInput({
+            title: '重命名链接',
+            hint: `当前名称：${link.name || '未命名链接'}`,
+            label: '链接名称',
+            value: link.name || '',
+            placeholder: '例如：官方直链、网盘镜像',
+            validate: (v) => (v ? null : '链接名称不能为空'),
+          });
+          if (next === null) return;
+          link.name = next.trim();
+          saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); } });
+        });
+      });
+      box.querySelectorAll('[data-delv]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const i = Number(btn.dataset.delv);
+          confirmAction('删除链接', `确定删除「${links[i].name}」吗？`, () => {
+            links.splice(i, 1);
+            saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); } });
+          });
+        });
+      });
+    }
+
+    /* ========== 弹窗控制 ========== */
+    let confirmCb = null;
+    function confirmAction(title, text, cb) {
+      $('confirmTitle').textContent = title;
+      $('confirmText').textContent = text;
+      confirmCb = cb;
+      $('confirmOverlay').classList.add('show');
+    }
+    function closeConfirm() {
+      $('confirmOverlay').classList.remove('show');
+      confirmCb = null;
+    }
+    $('btnConfirmCancel').addEventListener('click', closeConfirm);
+    $('btnConfirmOk').addEventListener('click', () => {
+      const cb = confirmCb;
+      closeConfirm();
+      if (cb) cb();
+    });
+
+    /* ---------- 输入弹窗（替代 prompt） ----------
+       askInput({ title, hint, label, value, placeholder, step, validate })
+       返回 Promise<string|null>，取消时为 null。 */
+    let inputResolve = null;
+
+    function closeInput(result) {
+      $('inputOverlay').classList.remove('show');
+      const r = inputResolve;
+      inputResolve = null;
+      if (r) r(result);
+    }
+
+    function askInput(opts) {
+      const o = opts || {};
+      $('inputTitle').firstChild.textContent = o.title || '请输入';
+      $('inputStep').textContent = o.step || '';
+      $('inputHint').textContent = o.hint || '';
+      $('inputHint').style.display = o.hint ? '' : 'none';
+      $('inputLabel').textContent = o.label || '名称';
+      $('inputField').value = o.value || '';
+      $('inputField').placeholder = o.placeholder || '';
+      $('inputErr').textContent = '';
+      $('inputOverlay').classList.add('show');
+      setTimeout(() => {
+        const el = $('inputField');
+        el.focus();
+        el.select();
+      }, 60);
+
+      return new Promise((resolve) => {
+        inputResolve = resolve;
+        // 保存校验函数，供确认时使用
+        $('btnInputOk')._validate = o.validate || null;
+      });
+    }
+
+    function submitInput() {
+      const val = $('inputField').value.trim();
+      const validate = $('btnInputOk')._validate;
+      const err = validate ? validate(val) : (val ? null : '内容不能为空');
+      if (err) {
+        $('inputErr').textContent = err;
+        $('inputField').focus();
+        return;
+      }
+      // 先清空校验，避免下次误用
+      $('btnInputOk')._validate = null;
+      closeInput(val);
+    }
+
+    $('btnInputCancel').addEventListener('click', () => closeInput(null));
+    $('btnInputOk').addEventListener('click', submitInput);
+    $('inputField').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); submitInput(); }
+      if (e.key === 'Escape') { e.preventDefault(); closeInput(null); }
+    });
+
+    function openLogin() {
+      $('pwdInput').value = '';
+      $('loginErr').textContent = '';
+      $('loginOverlay').classList.add('show');
+      setTimeout(() => $('pwdInput').focus(), 60);
+    }
+    function closeLogin() { $('loginOverlay').classList.remove('show'); }
+
+    let loginBusy = false;
+    async function tryLogin() {
+      if (loginBusy) return;
+      const val = $('pwdInput').value;
+      if (!val) {
+        $('loginErr').textContent = '请输入密码';
+        return;
+      }
+      loginBusy = true;
+      $('btnLoginOk').disabled = true;
+      $('loginErr').textContent = '正在验证…';
+      try {
+        const ok = await loginRequest(val);
+        if (ok) {
+          adminPassword = val;
+          closeLogin();
+          enterAdmin();
+        } else {
+          $('loginErr').textContent = '密码不正确，请重试';
+          $('pwdInput').select();
+        }
+      } catch (e) {
+        $('loginErr').textContent = '无法连接服务器：' + e.message;
+      } finally {
+        loginBusy = false;
+        $('btnLoginOk').disabled = false;
+      }
+    }
+
+    // 服务端没有会话，口令只放内存；刷新页面后需重新登录
+    function isAuthed() {
+      return adminPassword !== '';
+    }
+
+    function enterAdmin() {
+      renderAdmin();
+      showView('admin');
+    }
+
+    /* ========== 事件绑定 ========== */
+    $('adminEntry').addEventListener('click', () => {
+      if (isAuthed()) enterAdmin();
+      else openLogin();
+    });
+
+    $('btnLoginOk').addEventListener('click', tryLogin);
+    $('btnLoginCancel').addEventListener('click', closeLogin);
+    $('pwdInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') tryLogin();
+      if (e.key === 'Escape') closeLogin();
+    });
+
+    $('btnBack').addEventListener('click', () => {
+      renderSite();
+      fillSoftware();
+      showView('download');
+    });
+
+    // 修改管理密码：写入 EdgeOne Blob 存储，立刻生效（未绑定时只能改环境变量）
+    function openPwd() {
+      $('oldPwd').value = '';
+      $('newPwd').value = '';
+      $('pwdErr').textContent = '';
+      $('pwdOverlay').classList.add('show');
+      setTimeout(() => $('oldPwd').focus(), 60);
+    }
+    async function trySavePwd() {
+      const oldVal = $('oldPwd').value;
+      const newVal = $('newPwd').value;
+      if (oldVal !== adminPassword) {
+        $('pwdErr').textContent = '当前密码不正确';
+        $('oldPwd').select();
+        return;
+      }
+      if (newVal.length < 4) {
+        $('pwdErr').textContent = '新密码至少 4 位';
+        $('newPwd').select();
+        return;
+      }
+      // 交给服务端校验当前密码并写入 KV
+      try {
+        const res = await fetch('/api/password', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json', 'x-admin-password': oldVal },
+          body: JSON.stringify({ currentPassword: oldVal, newPassword: newVal }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok && body.ok) {
+          adminPassword = newVal;
+          $('pwdOverlay').classList.remove('show');
+          showToast('密码已更新');
+        } else {
+          $('pwdErr').textContent = body.error || '修改失败，请稍后重试';
+        }
+      } catch (e) {
+        $('pwdErr').textContent = '请求失败：' + e.message;
+      }
+    }
+    $('btnPwdCancel').addEventListener('click', () => $('pwdOverlay').classList.remove('show'));
+    $('btnPwdOk').addEventListener('click', trySavePwd);
+    $('newPwd').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') trySavePwd();
+    });
+
+    $('btnPwd').addEventListener('click', openPwd);
+
+    $('btnAddSoftware').addEventListener('click', async () => {
+      const name = await askInput({
+        title: '新增软件',
+        hint: '输入要展示在下载页的软件名称。',
+        label: '软件名称',
+        value: '',
+        placeholder: '例如：微信 PC 版',
+        validate: (v) => {
+          if (!v) return '软件名称不能为空';
+          if (state.softwares.some((s) => s.name === v)) return '已存在同名软件';
+          return null;
+        },
+      });
+      if (name === null) return;
+      state.softwares.push({ name, versions: [] });
+      selectedSw = state.softwares.length - 1;
+      selectedVer = 0;
+      saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); flashPane(); } });
+    });
+
+    // 新增版本
+    $('btnAddVersion').addEventListener('click', async () => {
+      const sw = state.softwares[selectedSw];
+      if (!sw) return;
+      if (!Array.isArray(sw.versions)) sw.versions = [];
+
+      const version = await askInput({
+        title: '新增版本',
+        hint: `为「${sw.name}」添加一个新版本，之后可以给这个版本单独配置下载链接。`,
+        label: '版本号',
+        value: '',
+        placeholder: '例如：3.9.12 / 2024 夏季版',
+        validate: (v) => {
+          if (!v) return '版本号不能为空';
+          if (sw.versions.some((x) => x.version === v)) return '该软件已有同名版本';
+          return null;
+        },
+      });
+      if (version === null) return;
+
+      sw.versions.unshift({ version, links: [] });
+      selectedVer = 0;
+      saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); flashPane(); } });
+    });
+
+    $('btnAddLink').addEventListener('click', async () => {
+      const sw = state.softwares[selectedSw];
+      if (!sw) return;
+      const ver = sw.versions && sw.versions[selectedVer];
+      if (!ver) {
+        showToast('请先新增一个版本');
+        return;
+      }
+      if (!Array.isArray(ver.links)) ver.links = [];
+
+      const name = await askInput({
+        title: '新增链接',
+        step: '1 / 2',
+        hint: `为「${sw.name}」的版本「${ver.version}」添加一个下载链接。`,
+        label: '链接名称',
+        value: '',
+        placeholder: '例如：官方直链、网盘镜像',
+        validate: (v) => (v ? null : '链接名称不能为空'),
+      });
+      if (name === null) return;
+
+      const url = await askInput({
+        title: '新增链接',
+        step: '2 / 2',
+        hint: `链接「${name}」的下载地址（http/https/ftp/磁力/网盘均可）。`,
+        label: '下载地址',
+        value: '',
+        placeholder: '下载地址，如：https://... 或 magent:?...',
+        validate: (v) => {
+          if (!v) return '下载地址不能为空';
+          return null;
+        },
+      });
+      if (url === null) return;
+
+      ver.links.unshift({ name, url, backupUrl: '' });
+      saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); flashPane(); } });
+    });
+
+    // 页面信息输入
+    $('fTitle').addEventListener('change', () => {
+      const v = $('fTitle').value.trim();
+      state.title = v || DEFAULT_DATA.title;
+      saveData().then((ok) => { if (ok) renderSite(); });
+    });
+    $('fSubtitle').addEventListener('change', () => {
+      state.subtitle = $('fSubtitle').value.trim();
+      saveData().then((ok) => { if (ok) renderSite(); });
+    });
+
+    // 点击遮罩关闭
+    ['loginOverlay', 'confirmOverlay', 'pwdOverlay'].forEach((id) => {
+      $(id).addEventListener('click', (e) => {
+        if (e.target.id === id) $(id).classList.remove('show');
+      });
+    });
+    // 输入弹窗点击遮罩关闭，需要走 closeInput 以 resolve
+    $('inputOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'inputOverlay') closeInput(null);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeLogin();
+        closeConfirm();
+        closeInput(null);
+        $('pwdOverlay').classList.remove('show');
+      }
+    });
+
+    /* ========== 初始化 ========== */
+    document.addEventListener('keydown', (e) => {
+      // Ctrl/⌘ + Shift + A 快速进入后台
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        if (isAuthed()) enterAdmin(); else openLogin();
+      }
+    });
+
+    setupDropdown(softwareSel);
+    const versionDd = setupDropdown(versionSel);
+
+    softwareSel.addEventListener('change', () => {
+      selectedSw = Number(softwareSel.value);
+      selectedVer = 0;
+      fillVersions();
+    });
+
+    versionSel.addEventListener('change', () => {
+      selectedVer = Number(versionSel.value) || 0;
+      renderLinks();
+      if (versionDd && versionDd.root) pulse(versionDd.root);
+    });
+
+    // 先渲染默认骨架，再从服务端拉取真实数据
+    renderSite();
+    fillSoftware();
+
+    (async function boot() {
+      try {
+        state = await fetchData();
+        renderSite();
+        fillSoftware();
+      } catch (e) {
+        showToast('加载数据失败：' + e.message);
+        if (linksContainer) {
+          linksContainer.innerHTML = '<p style="text-align:center;color:#c0392b;margin:20px 0;">数据加载失败，请刷新重试</p>';
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
