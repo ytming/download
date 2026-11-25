@@ -14,9 +14,10 @@
   body {
     min-height: 100vh;
     display: flex;
-    align-items: center;
+    /* 顶部对齐：内容高度变化时整张卡片不会上下重新居中跳动 */
+    align-items: flex-start;
     justify-content: center;
-    padding: 24px;
+    padding: clamp(24px, 6vh, 64px) 24px 32px;
     font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
     background-color: #fdf6e3;
     background-image: radial-gradient(circle at 15% 20%, #ffe9b8 0%, transparent 45%),
@@ -113,8 +114,9 @@
     display: flex;
     align-items: center;
     width: 100%;
-    height: 48px;
-    padding: 0 44px 0 16px;
+    min-height: 50px;
+    height: auto;
+    padding: 6px 44px 6px 16px;
     font: inherit;
     font-size: 1rem;
     color: #4a3f2f;
@@ -124,6 +126,7 @@
     border: 1.5px solid rgba(210, 190, 150, 0.75);
     border-radius: 13px;
     outline: none;
+    overflow: visible;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     transition: border-color 0.25s, box-shadow 0.3s, background 0.25s,
@@ -141,7 +144,20 @@
     transform: translateY(-1px);
     box-shadow: 0 0 0 4px rgba(224, 169, 92, 0.2), 0 10px 24px rgba(224, 169, 92, 0.26);
   }
-  .dd-label { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  /* 不用 overflow 裁切（会切掉中文字形底部，如「夏」的夂）：
+     长名字用右侧渐隐遮罩处理，纵向完全不裁 */
+  .dd-label {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: visible;
+    line-height: 1.8;
+    padding: 6px 0;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+  }
   .dd-label.swap { animation: ddLabelSwap 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
   @keyframes ddLabelSwap {
     from { opacity: 0; transform: translateY(7px); }
@@ -204,6 +220,7 @@
     padding: 10px 12px;
     border-radius: 9px;
     font-size: 0.95rem;
+    line-height: 1.5;
     cursor: pointer;
     opacity: 0;
     transform: translateY(-8px);
@@ -245,6 +262,11 @@
   .dd.pulse .dd-trigger { animation: ddPulse 0.55s ease-out; }
   @media (prefers-reduced-motion: reduce) {
     .dd-trigger, .dd-trigger::after, .dd-menu, .dd-item, .dd-check, .dd-label.swap {
+      transition: none !important;
+      animation: none !important;
+    }
+    /* 系统偏好减少动态效果时，链接区与注意事项框直接切换 */
+    .links-grid, .link-item, .note-box {
       transition: none !important;
       animation: none !important;
     }
@@ -452,6 +474,11 @@
     /* 滚动条默认隐藏，只有滚动/悬停时才出现 */
     scrollbar-gutter: stable;
   }
+  /* 高度过渡期间临时裁切，避免内容溢出到卡片外 */
+  .links-grid.animating {
+    overflow: hidden;
+    overflow-anchor: none;
+  }
   .links-grid.scrollable::-webkit-scrollbar { width: 8px; }
   .links-grid.scrollable::-webkit-scrollbar-track { background: transparent; }
   .links-grid.scrollable::-webkit-scrollbar-thumb {
@@ -530,6 +557,40 @@
     .link-actions { width: 100%; justify-content: flex-end; }
   }
 
+  /* ---------- 下载页：注意事项大框 ---------- */
+  .note-box {
+    margin-top: 18px;
+    padding: 16px 18px 17px;
+    background: linear-gradient(180deg, rgba(255, 250, 240, 0.95), rgba(255, 246, 229, 0.9));
+    border: 1.5px solid rgba(224, 169, 92, 0.42);
+    border-left: 4px solid #e0a95c;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(200, 165, 100, 0.1);
+    text-align: left;
+    transition: opacity 0.26s ease, transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .note-box[hidden] { display: none; }
+  /* 内容变化时从下方淡入 */
+  .note-box.note-enter { opacity: 0; transform: translateY(6px); }
+  .note-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 9px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6d5a38;
+    letter-spacing: 0.01em;
+  }
+  .note-title span:first-child { font-size: 1rem; }
+  .note-body {
+    font-size: 0.845rem;
+    line-height: 1.8;
+    color: #7c6a4c;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   /* ---------- 管理后台：软件 + 链接 联动面板 ---------- */
   .linkage {
     display: grid;
@@ -553,8 +614,7 @@
   @keyframes paneFlash {
     0% { background: rgba(255, 240, 205, 0.7); }
     100% { background: transparent; }
-  }
-  .pane-head {
+  }  .pane-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -597,6 +657,7 @@
     gap: 7px;
     padding: 6px 8px 6px 13px;
     font-size: 0.82rem;
+    line-height: 1.5;
     color: #6b4e1f;
     background: rgba(255, 255, 255, 0.72);
     border: 1.5px solid rgba(210, 190, 150, 0.75);
@@ -715,6 +776,46 @@
   #linksList::-webkit-scrollbar-track { background: transparent; }
   #linksList::-webkit-scrollbar-thumb { background: rgba(224, 169, 92, 0.4); border-radius: 999px; }
   #linksList::-webkit-scrollbar-thumb:hover { background: rgba(224, 169, 92, 0.72); }
+
+  /* 后台：注意事项编辑区 */
+  .note-editor {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(210, 190, 150, 0.65);
+  }
+  .note-editor-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-bottom: 8px;
+  }
+  .note-editor-head label {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6d5a38;
+  }
+  .note-editor-head .muted { font-size: 0.74rem; }
+  .note-editor textarea {
+    width: 100%;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 0.83rem;
+    line-height: 1.7;
+    color: #5d4a2a;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1.5px solid rgba(210, 190, 150, 0.75);
+    border-radius: 10px;
+    outline: none;
+    resize: vertical;
+    min-height: 84px;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .note-editor textarea:focus {
+    border-color: #e0a95c;
+    box-shadow: 0 0 0 3px rgba(224, 169, 92, 0.18);
+  }
 
 
   /* 存储未绑定提示 */
@@ -862,6 +963,12 @@
 
       <!-- 链接列表容器 -->
       <div class="links-grid" id="linksContainer"></div>
+
+      <!-- 注意事项（跟随软件变化，与版本无关） -->
+      <div class="note-box" id="noteBox" hidden>
+        <div class="note-title"><span>📌</span><span>注意事项</span></div>
+        <div class="note-body" id="noteBody"></div>
+      </div>
     </div>
   </div>
 
@@ -939,6 +1046,16 @@
             </div>
 
             <div id="linksList"></div>
+
+            <!-- 注意事项：只跟软件走，不随版本变化 -->
+            <div class="note-editor">
+              <div class="note-editor-head">
+                <label for="fNote">注意事项</label>
+                <span class="muted">显示在主页面下载链接下方，只属于当前软件（不随版本变化）</span>
+              </div>
+              <textarea id="fNote" rows="4"
+                placeholder="例如：&#10;1. 安装前请先关闭杀毒软件；&#10;2. 本页为官方直链，下载后请核对数字签名；&#10;3. 如遇下载失败，请稍后重试或更换网络。"></textarea>
+            </div>
           </div>
         </div>
       </div>
@@ -1023,6 +1140,7 @@
       softwares: [
         {
           name: '微信 PC 版',
+          note: '1. 安装前请先退出正在运行的旧版微信；\n2. 本页为官方直链，下载后请核对数字签名；\n3. 若下载速度较慢，可稍后重试或更换网络。',
           versions: [
             {
               version: '3.9.12',
@@ -1041,6 +1159,7 @@
         },
         {
           name: 'QQ NT',
+          note: '1. 仅支持 Windows 10 及以上系统；\n2. 安装包较大，请保持网络稳定；\n3. 安装时建议选择「自定义安装」，避免捆绑组件。',
           versions: [
             {
               version: '9.9.15',
@@ -1058,6 +1177,7 @@
         },
         {
           name: 'WPS Office',
+          note: '1. 安装前请关闭已打开的 WPS 文档；\n2. 个人免费版含广告，可在「设置 → 其他」中关闭；\n3. 请勿与其他版本 WPS 同时安装。',
           versions: [
             {
               version: '2024 夏季版',
@@ -1072,7 +1192,7 @@
     };
 
     // 与后端保持一致的数量上限
-    const LIMITS = { softwares: 200, versions: 200, links: 100 };
+    const LIMITS = { softwares: 200, versions: 200, links: 100, note: 2000 };
 
     const SESSION_KEY = 'download-page-auth-v1';
 
@@ -1129,6 +1249,7 @@
             }
             return {
               name: String(s.name || '未命名软件'),
+              note: String(s.note || '').slice(0, LIMITS.note),
               versions,
             };
           })
@@ -1306,6 +1427,7 @@
         if (linksContainer) {
           linksContainer.innerHTML = '<p style="text-align:center;color:#a08e6d;margin:20px 0;">暂无软件，请在管理后台添加。</p>';
         }
+        renderNote();
         return;
       }
       if (selectedSw >= state.softwares.length) selectedSw = 0;
@@ -1339,74 +1461,200 @@
       renderLinks();
     }
 
+    /* ---------- 链接区渲染：高度平滑过渡 + 卡片依次淡入 ---------- */
+    let linksAnimToken = 0;
+    let firstLinksRender = true;
+    let lastNoteText = null;
+
+    function prefersReducedMotion() {
+      try {
+        return typeof window !== 'undefined'
+          && typeof window.matchMedia === 'function'
+          && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      } catch (err) {
+        return false;
+      }
+    }
+
+    /** 取元素高度，兼容不支持 getBoundingClientRect 的环境 */
+    function elHeight(el) {
+      if (!el) return 0;
+      if (typeof el.getBoundingClientRect === 'function') {
+        const rect = el.getBoundingClientRect();
+        if (rect && Number.isFinite(rect.height)) return rect.height;
+      }
+      return Number(el.offsetHeight) || 0;
+    }
+
+    function buildLinkItem(link) {
+      const div = document.createElement('div');
+      div.className = 'link-item';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'link-name';
+      nameEl.textContent = link.name || '未命名链接';
+
+      // 一行：链接框 + 操作按钮
+      const row = document.createElement('div');
+      row.className = 'link-row';
+
+      const urlEl = document.createElement('div');
+      urlEl.className = 'link-url';
+      urlEl.textContent = link.url || '未填写链接';
+      urlEl.title = link.url || '';
+      if (!link.url) urlEl.style.color = '#b3a58c';
+
+      const actions = document.createElement('div');
+      actions.className = 'link-actions';
+
+      const cp = document.createElement('button');
+      cp.className = 'copy-btn';
+      cp.type = 'button';
+      cp.textContent = '复制链接';
+      cp.addEventListener('click', () => copyText(link.url));
+
+      actions.appendChild(cp);
+      row.appendChild(urlEl);
+      row.appendChild(actions);
+      div.appendChild(nameEl);
+      div.appendChild(row);
+      return div;
+    }
+
     // 渲染当前版本下的链接
     function renderLinks() {
       if (!linksContainer) return;
+      // 注意事项只跟软件走，和版本无关，这里统一刷新
+      renderNote();
+
+      const animate = !firstLinksRender && !prefersReducedMotion();
+      firstLinksRender = false;
+
+      const startH = elHeight(linksContainer);
+
+      // 先确定要显示的文案与链接
       const sw = currentSoftware();
+      let message = '';
+      let links = [];
       if (!sw) {
-        linksContainer.innerHTML = '<p style="text-align:center;color:#a08e6d;margin:20px 0;">暂无软件，请在管理后台添加。</p>';
-        return;
+        message = '暂无软件，请在管理后台添加。';
+      } else if (!sw.versions || !sw.versions.length) {
+        message = '该软件暂无版本，请在管理后台添加版本。';
+      } else {
+        const ver = currentVersion();
+        links = (ver && Array.isArray(ver.links)) ? ver.links : [];
+        if (!links.length) message = '该版本暂无下载链接，请在管理后台添加。';
       }
-      if (!sw.versions || !sw.versions.length) {
-        linksContainer.innerHTML = '<p style="text-align:center;color:#a08e6d;margin:20px 0;">该软件暂无版本，请在管理后台添加版本。</p>';
-        return;
-      }
-      const ver = currentVersion();
-      const links = (ver && Array.isArray(ver.links)) ? ver.links : [];
-      if (!links.length) {
-        linksContainer.innerHTML = '<p style="text-align:center;color:#a08e6d;margin:20px 0;">该版本暂无下载链接，请在管理后台添加。</p>';
-        return;
-      }
+
+      // 打断上一段动画：直接按当前视觉高度接管，避免叠加
+      const token = ++linksAnimToken;
+      linksContainer.style.transition = 'none';
+      linksContainer.style.height = 'auto';
+      linksContainer.style.maxHeight = '';
+      linksContainer.classList.remove('animating', 'scrollable');
+
+      // 重建内容
       linksContainer.innerHTML = '';
       linksContainer.scrollTop = 0;
-      links.forEach((link) => {
-        const div = document.createElement('div');
-        div.className = 'link-item';
+      const created = [];
+      if (message) {
+        const p = document.createElement('p');
+        p.style.cssText = 'text-align:center;color:#a08e6d;margin:20px 0;';
+        p.textContent = message;
+        linksContainer.appendChild(p);
+      } else {
+        links.forEach((link) => {
+          const item = buildLinkItem(link);
+          if (animate) {
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(8px)';
+          }
+          linksContainer.appendChild(item);
+          created.push(item);
+        });
+      }
 
-        const nameEl = document.createElement('div');
-        nameEl.className = 'link-name';
-        nameEl.textContent = link.name || '未命名链接';
+      // 目标高度：超过 3 条时按「前 3 条」裁切
+      const cap = computeLinksCap();
+      const naturalH = elHeight(linksContainer);
+      const endH = cap > 0 ? Math.min(cap, naturalH) : naturalH;
 
-        // 一行：链接框 + 操作按钮
-        const row = document.createElement('div');
-        row.className = 'link-row';
+      const settle = () => {
+        if (token !== linksAnimToken) return;
+        linksContainer.style.transition = '';
+        linksContainer.style.height = '';
+        linksContainer.classList.remove('animating');
+        applyLinksScroll();
+      };
 
-        const urlEl = document.createElement('div');
-        urlEl.className = 'link-url';
-        urlEl.textContent = link.url || '未填写链接';
-        urlEl.title = link.url || '';
-        if (!link.url) urlEl.style.color = '#b3a58c';
+      if (!animate || Math.abs(endH - startH) < 1) {
+        settle();
+      } else {
+        linksContainer.classList.add('animating');
+        linksContainer.style.height = startH + 'px';
+        void linksContainer.offsetHeight; // 强制 reflow，让起始高度先生效
+        linksContainer.style.transition = 'height 220ms cubic-bezier(.4, 0, .2, 1)';
+        linksContainer.style.height = endH + 'px';
 
-        const actions = document.createElement('div');
-        actions.className = 'link-actions';
+        const onEnd = (e) => {
+          if (e.target !== linksContainer || e.propertyName !== 'height') return;
+          linksContainer.removeEventListener('transitionend', onEnd);
+          settle();
+        };
+        linksContainer.addEventListener('transitionend', onEnd);
+        setTimeout(settle, 320); // 兜底：transitionend 没触发时也能收尾
+      }
 
-        const cp = document.createElement('button');
-        cp.className = 'copy-btn';
-        cp.type = 'button';
-        cp.textContent = '复制链接';
-        cp.addEventListener('click', () => copyText(link.url));
-
-        actions.appendChild(cp);
-        row.appendChild(urlEl);
-        row.appendChild(actions);
-        div.appendChild(nameEl);
-        div.appendChild(row);
-        linksContainer.appendChild(div);
-      });
-      // 超过 3 条才启用纵向滚动
-      applyLinksScroll();
+      // 卡片依次淡入（前 4 条错峰，更靠后的不再延迟）
+      if (animate) {
+        created.forEach((el, i) => {
+          const delay = Math.min(i, 3) * 30;
+          requestAnimationFrame(() => {
+            el.style.transition = `opacity 240ms ease ${delay}ms, transform 260ms cubic-bezier(.22, 1, .36, 1) ${delay}ms`;
+            el.style.opacity = '1';
+            el.style.transform = 'none';
+            setTimeout(() => {
+              el.style.transition = '';
+              el.style.opacity = '';
+              el.style.transform = '';
+            }, 320 + delay);
+          });
+        });
+      }
     }
 
-    // 只在链接超过 3 条时给容器加滚动，并按「前 3 条的实际高度」设上限
-    function applyLinksScroll() {
-      if (!linksContainer) return;
-      const items = linksContainer.children;
-      if (items.length <= 3) {
-        linksContainer.classList.remove('scrollable');
-        linksContainer.style.maxHeight = '';
+    // 渲染「注意事项」大框：内容变化时淡入
+    function renderNote() {
+      const box = $('noteBox');
+      const body = $('noteBody');
+      if (!box || !body) return;
+      const sw = currentSoftware();
+      const text = String((sw && sw.note) || '').trim();
+      const changed = text !== lastNoteText;
+      lastNoteText = text;
+
+      if (!text) {
+        body.textContent = '';
+        box.hidden = true;
+        box.classList.remove('note-enter');
         return;
       }
-      linksContainer.classList.add('scrollable');
+
+      body.textContent = text;
+      box.hidden = false;
+      if (changed && !firstLinksRender && !prefersReducedMotion()) {
+        box.classList.add('note-enter');
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => box.classList.remove('note-enter'));
+        });
+      }
+    }
+
+    // 计算链接区在「只显示前 3 条」时的高度；≤3 条返回 0
+    function computeLinksCap() {
+      if (!linksContainer) return 0;
+      const items = linksContainer.children;
+      if (!items || items.length <= 3) return 0;
       const first = items[0];
       const fourth = items[3];
       // 用 offsetTop 差值量出「前 3 条 + 间距」的高度（不受滚动位置影响）
@@ -1424,7 +1672,20 @@
         const d = Math.round(fRect.top - cRect.top);
         if (Number.isFinite(d) && d > 0) h = d;
       }
-      linksContainer.style.maxHeight = h > 0 ? h + 'px' : '';
+      return h;
+    }
+
+    // 只在链接超过 3 条时给容器加滚动
+    function applyLinksScroll() {
+      if (!linksContainer) return;
+      const cap = computeLinksCap();
+      if (!cap) {
+        linksContainer.classList.remove('scrollable');
+        linksContainer.style.maxHeight = '';
+        return;
+      }
+      linksContainer.classList.add('scrollable');
+      linksContainer.style.maxHeight = cap + 'px';
     }
 
     // 窗口尺寸变化时重新计算（换行会改变单条高度）
@@ -1676,6 +1937,11 @@
         box.innerHTML = '<div class="empty">左侧还没有软件，先新增一个</div>';
         btnVer.disabled = true; btnVer.style.opacity = '0.5';
         btnLink.disabled = true; btnLink.style.opacity = '0.5';
+        const noteEmpty = $('fNote');
+        if (noteEmpty) {
+          noteEmpty.value = '';
+          noteEmpty.disabled = true;
+        }
         return;
       }
 
@@ -1685,6 +1951,13 @@
       if (selectedVer < 0) selectedVer = 0;
 
       $('linkHint').textContent = `当前软件：${sw.name} · ${sw.versions.length} 个版本`;
+
+      // 注意事项：只属于当前软件
+      const noteEl = $('fNote');
+      if (noteEl) {
+        noteEl.value = String(sw.note || '');
+        noteEl.disabled = false;
+      }
 
       // 版本标签
       tabs.innerHTML = sw.versions.length
@@ -2072,6 +2345,21 @@
     $('fSubtitle').addEventListener('change', () => {
       state.subtitle = $('fSubtitle').value.trim();
       saveData().then((ok) => { if (ok) renderSite(); });
+    });
+
+    // 注意事项：保存到当前选中的软件（与版本无关）
+    $('fNote').addEventListener('change', () => {
+      const sw = state.softwares[selectedSw];
+      if (!sw) return;
+      const val = $('fNote').value.slice(0, LIMITS.note);
+      if (val === String(sw.note || '')) return;
+      sw.note = val;
+      saveData().then((ok) => {
+        if (ok) {
+          renderNote();
+          renderSwList();
+        }
+      });
     });
 
     // 点击遮罩关闭

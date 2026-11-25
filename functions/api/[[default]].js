@@ -33,6 +33,7 @@ const LIMITS = {
   name: 80,
   version: 60,
   url: 2048,
+  note: 2000,
   softwares: 200,
   versions: 200,
   links: 100,
@@ -48,6 +49,7 @@ const DEFAULT_DATA = {
   softwares: [
     {
       name: '微信 PC 版',
+      note: '1. 安装前请先退出正在运行的旧版微信；\n2. 本页为官方直链，下载后请核对数字签名；\n3. 若下载速度较慢，可稍后重试或更换网络。',
       versions: [
         {
           version: '3.9.12',
@@ -66,6 +68,7 @@ const DEFAULT_DATA = {
     },
     {
       name: 'QQ NT',
+      note: '1. 仅支持 Windows 10 及以上系统；\n2. 安装包较大，请保持网络稳定；\n3. 安装时建议选择「自定义安装」，避免捆绑组件。',
       versions: [
         {
           version: '9.9.15',
@@ -83,6 +86,7 @@ const DEFAULT_DATA = {
     },
     {
       name: 'WPS Office',
+      note: '1. 安装前请关闭已打开的 WPS 文档；\n2. 个人免费版含广告，可在「设置 → 其他」中关闭；\n3. 请勿与其他版本 WPS 同时安装。',
       versions: [
         {
           version: '2024 夏季版',
@@ -111,6 +115,13 @@ function fail(message, status = 400) {
 function text(value, max) {
   let s = String(value ?? '');
   s = s.replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  return max ? s.slice(0, max) : s;
+}
+
+/** 多行文本清洗：保留换行，但统一换行符、去掉首尾空白与过多空行 */
+function multiText(value, max) {
+  let s = String(value ?? '').replace(/\r\n?/g, '\n');
+  s = s.replace(/\n{3,}/g, '\n\n').trim();
   return max ? s.slice(0, max) : s;
 }
 
@@ -202,6 +213,7 @@ function sanitize(input) {
       }
       return {
         name: text(s?.name, LIMITS.name),
+        note: multiText(s?.note, LIMITS.note),
         versions,
       };
     })
