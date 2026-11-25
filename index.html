@@ -426,6 +426,27 @@
     border-color: #e0a95c;
     box-shadow: 0 0 0 3px rgba(224, 169, 92, 0.16);
   }
+
+  /* ---------- 长按拖动排序（软件 / 版本） ---------- */
+  .sw-item, .ver-tab {
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .sw-item.sorting, .ver-tab.sorting {
+    position: relative;
+    z-index: 6;
+    pointer-events: none;      /* 让 elementFromPoint 命中下方元素 */
+    transform: scale(1.03);
+    background: #fffdf8;
+    border-color: #e0a95c;
+    box-shadow: 0 12px 26px rgba(200, 165, 100, 0.42);
+    transition: none;
+  }
+  .sw-list.sorting-on, .ver-tabs.sorting-on { cursor: grabbing; }
+  @media (prefers-reduced-motion: reduce) {
+    .sw-item.sorting, .ver-tab.sorting { transform: none; }
+  }
   .sw-item .sw-name { flex: 1; font-weight: 500; }
   .sw-item .sw-count {
     font-size: 0.75rem;
@@ -1014,7 +1035,7 @@
         <div class="card-head">
           <div>
             <h3>软件与下载链接</h3>
-            <span class="muted">左侧点选软件，右侧即显示它的下载链接，两者是同一份配置</span>
+            <span class="muted">左侧点选软件，右侧即显示它的下载链接；长按列表项可拖动排序</span>
           </div>
           <button class="btn btn-primary btn-sm" id="btnAddSoftware" type="button">＋ 新增软件</button>
         </div>
@@ -1878,6 +1899,146 @@
       pane.classList.add('flash');
     }
 
+    /* ---------- 长按拖动排序 ----------
+       container：列表容器（事件委托，只绑一次）
+       itemSelector：可拖动项
+       onCommit(ordered)：拖完后按新顺序回调，ordered 是元素上的 __data 数组
+       触摸：按住 260ms 进入拖动；鼠标：按住移动 5px 即开始拖动 */
+    function enableSortable(container, itemSelector, onCommit) {
+      if (!container) return;
+      container.__onSort = onCommit;
+      if (container.__sortableBound) return;
+      container.__sortableBound = true;
+
+      const HOLD_MS = 260;   // 触摸长按判定时间
+      const MOVE_TOL = 8;    // 长按前的移动容差（超过当作滚动，放弃拖动）
+
+      let holdTimer = null;
+      let candidate = null;
+      let dragging = null;
+      let pointerId = null;
+      let startX = 0;
+      let startY = 0;
+      let axis = 'y';
+      let didReorder = false;
+
+      function clearHold() {
+        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      }
+
+      function beginDrag(el) {
+        dragging = el;
+        didReorder = false;
+        const list = Array.from(container.querySelectorAll(itemSelector));
+        // 前两个元素在同一水平线 → 横向排序（版本标签），否则纵向（软件列表）
+        axis = (list.length > 1 && Math.abs(list[0].offsetTop - list[1].offsetTop) < 2) ? 'x' : 'y';
+        el.classList.add('sorting');
+        container.classList.add('sorting-on');
+        if (pointerId !== null && typeof container.setPointerCapture === 'function') {
+          try { container.setPointerCapture(pointerId); } catch (err) { /* 忽略 */ }
+        }
+      }
+
+      function reset(commit) {
+        clearHold();
+        const el = dragging;
+        const changed = didReorder;
+        dragging = null;
+        candidate = null;
+        pointerId = null;
+        didReorder = false;
+        if (el) el.classList.remove('sorting');
+        container.classList.remove('sorting-on');
+        if (!commit || !changed) return;
+
+        // 抑制拖动结束后紧跟的 click，避免误选中
+        container.__suppressClick = true;
+        setTimeout(() => { container.__suppressClick = false; }, 400);
+
+        const ordered = Array.from(container.querySelectorAll(itemSelector))
+          .map((node) => node.__data)
+          .filter(Boolean);
+        if (typeof container.__onSort === 'function') container.__onSort(ordered);
+      }
+
+      container.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (e.target.closest('button, [data-del], [data-delver]')) return;
+        const el = e.target.closest(itemSelector);
+        if (!el || !container.contains(el)) return;
+
+        candidate = el;
+        pointerId = e.pointerId;
+        startX = e.clientX;
+        startY = e.clientY;
+        didReorder = false;
+        clearHold();
+        if (e.pointerType === 'touch') {
+          holdTimer = setTimeout(() => {
+            if (candidate === el && !dragging) beginDrag(el);
+          }, HOLD_MS);
+        }
+      });
+
+      container.addEventListener('pointermove', (e) => {
+        if (!candidate || e.pointerId !== pointerId) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (!dragging) {
+          if (e.pointerType === 'mouse') {
+            if (dist <= 5) return;
+            beginDrag(candidate);
+          } else if (dist > MOVE_TOL) {
+            // 长按之前就滑动了 → 用户想滚动，放弃
+            reset(false);
+            return;
+          } else {
+            return;
+          }
+        }
+
+        if (e.cancelable) e.preventDefault();
+
+        // 拖动项设了 pointer-events:none，所以命中的是它下面的兄弟项
+        const under = typeof document.elementFromPoint === 'function'
+          ? document.elementFromPoint(e.clientX, e.clientY)
+          : null;
+        const over = under && under.closest ? under.closest(itemSelector) : null;
+        if (!over || over === dragging || !container.contains(over)) return;
+
+        const rect = over.getBoundingClientRect();
+        const mid = axis === 'x' ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
+        const pos = axis === 'x' ? e.clientX : e.clientY;
+        if (pos < mid) container.insertBefore(dragging, over);
+        else container.insertBefore(dragging, over.nextSibling);
+        didReorder = true;
+      });
+
+      container.addEventListener('pointerup', () => reset(true));
+      container.addEventListener('pointercancel', () => reset(false));
+
+      // 拖动过程中阻止页面滚动（触摸设备）
+      container.addEventListener('touchmove', (e) => {
+        if (dragging && e.cancelable) e.preventDefault();
+      }, { passive: false });
+
+      // 兜底：指针在容器外松开
+      window.addEventListener('pointerup', () => {
+        if (dragging || candidate) reset(true);
+      });
+
+      // 拖动后紧跟的 click 直接吞掉
+      container.addEventListener('click', (e) => {
+        if (container.__suppressClick) {
+          container.__suppressClick = false;
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      }, true);
+    }
+
     function renderSwList() {
       const box = $('swList');
       const countEl = $('swCount');
@@ -1896,6 +2057,8 @@
       `).join('');
 
       box.querySelectorAll('.sw-item').forEach((el) => {
+        // 记录对应的软件对象，拖动排序后按它还原新顺序
+        el.__data = state.softwares[Number(el.dataset.index)];
         el.addEventListener('click', (e) => {
           if (e.target.closest('[data-del]')) return;
           const next = Number(el.dataset.index);
@@ -1906,6 +2069,16 @@
           renderVersionPanel();
           flashPane();
         });
+      });
+
+      // 长按拖动排序软件
+      enableSortable(box, '.sw-item', (ordered) => {
+        if (ordered.length !== state.softwares.length) return;
+        const keep = state.softwares[selectedSw];
+        state.softwares = ordered;
+        selectedSw = Math.max(0, ordered.indexOf(keep));
+        selectedVer = 0;
+        saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); } });
       });
       box.querySelectorAll('[data-del]').forEach((btn) => {
         btn.addEventListener('click', (e) => {
@@ -1950,7 +2123,9 @@
       if (selectedVer >= sw.versions.length) selectedVer = Math.max(0, sw.versions.length - 1);
       if (selectedVer < 0) selectedVer = 0;
 
-      $('linkHint').textContent = `当前软件：${sw.name} · ${sw.versions.length} 个版本`;
+      $('linkHint').textContent = sw.versions.length > 1
+        ? `当前软件：${sw.name} · ${sw.versions.length} 个版本 · 长按可拖动排序`
+        : `当前软件：${sw.name} · ${sw.versions.length} 个版本`;
 
       // 注意事项：只属于当前软件
       const noteEl = $('fNote');
@@ -1970,6 +2145,8 @@
         : '<span class="muted">还没有版本，点击右上角「＋ 新增版本」添加</span>';
 
       tabs.querySelectorAll('.ver-tab').forEach((tab) => {
+        // 记录对应的版本对象，拖动排序后按它还原新顺序
+        tab.__data = sw.versions[Number(tab.dataset.ver)];
         tab.addEventListener('click', (e) => {
           if (e.target.closest('[data-delver]')) return;
           const i = Number(tab.dataset.ver);
@@ -1978,6 +2155,16 @@
           renderVersionPanel();
           flashPane();
         });
+      });
+
+      // 长按拖动排序版本
+      enableSortable(tabs, '.ver-tab', (ordered) => {
+        const target = state.softwares[selectedSw];
+        if (!target || ordered.length !== target.versions.length) return;
+        const keep = target.versions[selectedVer];
+        target.versions = ordered;
+        selectedVer = Math.max(0, ordered.indexOf(keep));
+        saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); } });
       });
       tabs.querySelectorAll('[data-delver]').forEach((x) => {
         x.addEventListener('click', (e) => {
