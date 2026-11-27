@@ -40,64 +40,14 @@ const LIMITS = {
 };
 
 /* =========================================================
- * 初始默认数据（Blob 中还没有数据时展示）
+ * 初始默认数据（Blob 中还没有数据时返回）
  * 结构：软件 → 版本 → 自定义命名的下载链接
+ * 故意不内置任何示例软件，避免首屏出现"演示数据"
  * =======================================================*/
 const DEFAULT_DATA = {
   title: '📦 软件下载中心',
-  subtitle: '选择软件与版本，复制链接或直接下载',
-  softwares: [
-    {
-      name: '微信 PC 版',
-      note: '1. 安装前请先退出正在运行的旧版微信；\n2. 本页为官方直链，下载后请核对数字签名；\n3. 若下载速度较慢，可稍后重试或更换网络。',
-      versions: [
-        {
-          version: '3.9.12',
-          links: [
-            { name: '直链下载', url: 'https://dldir1.qq.com/weixin/Windows/WeChatSetup.exe', backupUrl: 'https://dldir1v6.qq.com/weixin/Windows/WeChatSetup.exe' },
-            { name: '备用链接', url: 'https://dldir1.qq.com/weixin/Windows/WeChatSetup_3.9.10.exe', backupUrl: '' },
-          ],
-        },
-        {
-          version: '3.9.10',
-          links: [
-            { name: '直链下载', url: 'https://dldir1.qq.com/weixin/Windows/WeChatSetup_3.9.10.exe', backupUrl: '' },
-          ],
-        },
-      ],
-    },
-    {
-      name: 'QQ NT',
-      note: '1. 仅支持 Windows 10 及以上系统；\n2. 安装包较大，请保持网络稳定；\n3. 安装时建议选择「自定义安装」，避免捆绑组件。',
-      versions: [
-        {
-          version: '9.9.15',
-          links: [
-            { name: '直链下载', url: 'https://dldir1.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.15_240701_x64_01.exe', backupUrl: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.15_240701_x64_01.exe' },
-          ],
-        },
-        {
-          version: '9.9.12',
-          links: [
-            { name: '直链下载', url: 'https://dldir1.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.12_240612_x64_01.exe', backupUrl: '' },
-          ],
-        },
-      ],
-    },
-    {
-      name: 'WPS Office',
-      note: '1. 安装前请关闭已打开的 WPS 文档；\n2. 个人免费版含广告，可在「设置 → 其他」中关闭；\n3. 请勿与其他版本 WPS 同时安装。',
-      versions: [
-        {
-          version: '2024 夏季版',
-          links: [
-            { name: '直链下载', url: 'https://package.wps.cn/setup/wps_setup.exe', backupUrl: 'https://dl.wpscdn.cn/setup/wps_setup.exe' },
-            { name: '备用镜像', url: 'https://dl.wpscdn.cn/setup/wps_setup.exe', backupUrl: '' },
-          ],
-        },
-      ],
-    },
-  ],
+  subtitle: '',
+  softwares: [],
 };
 
 /* =========================================================

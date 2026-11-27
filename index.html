@@ -97,6 +97,40 @@
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     box-shadow: 0 20px 60px rgba(180, 150, 90, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   }
+
+  /* ---------- 首屏骨架屏（数据未到达前显示，避免闪出旧数据） ---------- */
+  .skeleton { display: none; flex-direction: column; gap: 14px; }
+  body.booting .skeleton { display: flex; }
+  /* 骨架期间隐藏真实内容，数据到达后再整体淡入 */
+  body.booting #viewDownload .panel > :not(.skeleton) { display: none; }
+  body:not(.booting) #viewDownload .panel > :not(.skeleton) {
+    animation: contentIn 0.22s ease both;
+  }
+  @keyframes contentIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+  .sk {
+    border-radius: 10px;
+    background: linear-gradient(90deg, rgba(224, 169, 92, 0.1) 25%,
+      rgba(224, 169, 92, 0.2) 37%, rgba(224, 169, 92, 0.1) 63%);
+    background-size: 400% 100%;
+    animation: skShimmer 1.4s ease infinite;
+  }
+  @keyframes skShimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: 0 0; }
+  }
+  .sk-title { height: 30px; width: 46%; border-radius: 9px; }
+  .sk-subtitle { height: 13px; width: 64%; }
+  .sk-search { height: 42px; border-radius: 11px; }
+  .sk-row { display: flex; gap: 16px; }
+  .sk-row .sk { flex: 1; height: 50px; border-radius: 13px; }
+  .sk-card { height: 78px; border-radius: 12px; margin-top: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    .sk { animation: none; }
+    body:not(.booting) #viewDownload .panel > :not(.skeleton) { animation: none; }
+  }
   .field { margin-bottom: 20px; }
   .row {
     display: grid;
@@ -105,6 +139,10 @@
     gap: 16px;
     align-items: end;
     margin-bottom: 20px;
+    /* 整行（含展开的下拉菜单）必须压在下方内容之上：
+       这样菜单盖住提示文字是确定的，不受子元素层叠细节影响 */
+    position: relative;
+    z-index: 5;
   }
   .row .field { margin-bottom: 0; min-width: 0; }
   .dd { position: relative; min-width: 0; }
@@ -183,16 +221,17 @@
     left: 0;
     right: 0;
     top: calc(100% + 8px);
-    z-index: 30;
+    /* 必须高于页面内容（.links-grid / .note-box 是 z-index: 0） */
+    z-index: 40;
     max-height: 264px;
     overflow-y: auto;
     padding: 6px;
-    background: rgba(255, 253, 247, 0.97);
+    /* 必须完全不透明：半透明 + backdrop-filter 会让下方文字隐隐透出来，
+       看起来像"提示文字盖住了菜单" */
+    background: #fffdf7;
     border: 1px solid rgba(224, 200, 160, 0.85);
     border-radius: 14px;
     box-shadow: 0 18px 40px rgba(150, 120, 70, 0.22), 0 2px 8px rgba(150, 120, 70, 0.1);
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
     transform-origin: top center;
     opacity: 0;
     visibility: hidden;
@@ -481,9 +520,12 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    margin: 18px 0 4px;
+    margin: 22px 0 4px;
     min-height: 60px;
     padding: 4px 8px 4px 2px;
+    /* 固定层级：永远在下拉菜单浮层之下，避免提示文字盖住菜单 */
+    position: relative;
+    z-index: 0;
   }
   /* 只有超过 3 条链接时才由 JS 加上 .scrollable，内部纵向滚动 */
   .links-grid.scrollable {
@@ -588,6 +630,9 @@
     border-radius: 14px;
     box-shadow: 0 6px 18px rgba(200, 165, 100, 0.1);
     text-align: left;
+    /* 与链接区一样固定在菜单浮层之下 */
+    position: relative;
+    z-index: 0;
     transition: opacity 0.26s ease, transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .note-box[hidden] { display: none; }
@@ -875,6 +920,7 @@
   .overlay.show { display: flex; animation: fadeIn 0.2s ease; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   .modal {
+    position: relative;
     width: 100%;
     max-width: 420px;
     padding: 32px;
@@ -892,6 +938,31 @@
     to { opacity: 1; transform: none; }
   }
   .modal h3 { font-size: 1.15rem; margin-bottom: 6px; }
+  /* 弹窗右上角的关闭叉 */
+  .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 17px;
+    line-height: 1;
+    color: #a99a7c;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s, transform 0.15s;
+  }
+  .modal-close:hover {
+    color: #6d5a38;
+    background: rgba(224, 169, 92, 0.18);
+    transform: scale(1.06);
+  }
+  .modal-close:active { transform: scale(0.96); }
   .modal .hint { font-size: 0.82rem; color: #8a7a5c; margin-bottom: 20px; line-height: 1.6; }
   .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
   .modal-actions .btn { flex: 1; justify-content: center; }
@@ -949,7 +1020,7 @@
   }
 </style>
 </head>
-<body>
+<body class="booting">
 
   <!-- 右上角：管理后台入口 -->
   <div class="topbar">
@@ -961,6 +1032,19 @@
   <!-- ============ 下载页 ============ -->
   <div class="view active" id="viewDownload">
     <div class="panel">
+      <!-- 数据加载完成前显示的骨架屏 -->
+      <div class="skeleton" id="skeleton" aria-hidden="true">
+        <div class="sk sk-title"></div>
+        <div class="sk sk-subtitle"></div>
+        <div class="sk sk-search"></div>
+        <div class="sk-row">
+          <div class="sk sk-select"></div>
+          <div class="sk sk-select"></div>
+        </div>
+        <div class="sk sk-card"></div>
+        <div class="sk sk-card"></div>
+      </div>
+
       <h1 id="siteTitle">📦 软件下载中心</h1>
       <p class="subtitle" id="siteSubtitle">选择软件，复制链接或直接下载</p>
 
@@ -1087,16 +1171,14 @@
   <!-- 登录弹窗 -->
   <div class="overlay" id="loginOverlay">
     <div class="modal">
+      <button class="modal-close" id="btnLoginClose" type="button" aria-label="关闭" title="关闭">×</button>
       <h3>管理员登录</h3>
-      <p class="hint">密码由服务端校验：默认 <code>admin</code>，部署时可通过环境变量
-        <code>ADMIN_PASSWORD</code> 指定，登录后也能在「修改密码」里更换。</p>
       <div class="form-field">
         <label for="pwdInput">密码</label>
         <input type="password" id="pwdInput" placeholder="请输入管理员密码" autocomplete="current-password">
       </div>
       <div class="err" id="loginErr"></div>
       <div class="modal-actions">
-        <button class="btn btn-ghost" id="btnLoginCancel" type="button">取消</button>
         <button class="btn btn-primary" id="btnLoginOk" type="button">进入后台</button>
       </div>
     </div>
@@ -1154,62 +1236,11 @@
   <div class="toast" id="toast">已保存</div>
 
   <script>
-    /* ========== 默认数据（软件 → 版本 → 链接） ========== */
+    /* ========== 默认数据：不含任何示例软件，避免首屏闪出演示数据 ========== */
     const DEFAULT_DATA = {
       title: '📦 软件下载中心',
-      subtitle: '选择软件与版本，复制链接或直接下载',
-      softwares: [
-        {
-          name: '微信 PC 版',
-          note: '1. 安装前请先退出正在运行的旧版微信；\n2. 本页为官方直链，下载后请核对数字签名；\n3. 若下载速度较慢，可稍后重试或更换网络。',
-          versions: [
-            {
-              version: '3.9.12',
-              links: [
-                { name: '直链下载', url: 'https://dldir1.qq.com/weixin/Windows/WeChatSetup.exe', backupUrl: 'https://dldir1v6.qq.com/weixin/Windows/WeChatSetup.exe' },
-                { name: '备用链接', url: 'https://dldir1.qq.com/weixin/Windows/WeChatSetup_3.9.10.exe', backupUrl: '' },
-              ],
-            },
-            {
-              version: '3.9.10',
-              links: [
-                { name: '直链下载', url: 'https://dldir1.qq.com/weixin/Windows/WeChatSetup_3.9.10.exe', backupUrl: '' },
-              ],
-            },
-          ],
-        },
-        {
-          name: 'QQ NT',
-          note: '1. 仅支持 Windows 10 及以上系统；\n2. 安装包较大，请保持网络稳定；\n3. 安装时建议选择「自定义安装」，避免捆绑组件。',
-          versions: [
-            {
-              version: '9.9.15',
-              links: [
-                { name: '直链下载', url: 'https://dldir1.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.15_240701_x64_01.exe', backupUrl: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.15_240701_x64_01.exe' },
-              ],
-            },
-            {
-              version: '9.9.12',
-              links: [
-                { name: '直链下载', url: 'https://dldir1.qq.com/qqfile/qq/QQNT/Windows/QQ_9.9.12_240612_x64_01.exe', backupUrl: '' },
-              ],
-            },
-          ],
-        },
-        {
-          name: 'WPS Office',
-          note: '1. 安装前请关闭已打开的 WPS 文档；\n2. 个人免费版含广告，可在「设置 → 其他」中关闭；\n3. 请勿与其他版本 WPS 同时安装。',
-          versions: [
-            {
-              version: '2024 夏季版',
-              links: [
-                { name: '直链下载', url: 'https://package.wps.cn/setup/wps_setup.exe', backupUrl: 'https://dl.wpscdn.cn/setup/wps_setup.exe' },
-                { name: '备用镜像', url: 'https://dl.wpscdn.cn/setup/wps_setup.exe', backupUrl: '' },
-              ],
-            },
-          ],
-        },
-      ],
+      subtitle: '',
+      softwares: [],
     };
 
     // 与后端保持一致的数量上限
@@ -1560,7 +1591,7 @@
       if (!sw) {
         message = '暂无软件，请在管理后台添加。';
       } else if (!sw.versions || !sw.versions.length) {
-        message = '该软件暂无版本，请在管理后台添加版本。';
+        message = '该软件暂无版本，请在管理后台添加版本';
       } else {
         const ver = currentVersion();
         links = (ver && Array.isArray(ver.links)) ? ver.links : [];
@@ -2379,7 +2410,7 @@
     });
 
     $('btnLoginOk').addEventListener('click', tryLogin);
-    $('btnLoginCancel').addEventListener('click', closeLogin);
+    $('btnLoginClose').addEventListener('click', closeLogin);
     $('pwdInput').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') tryLogin();
       if (e.key === 'Escape') closeLogin();
@@ -2592,20 +2623,27 @@
       if (versionDd && versionDd.root) pulse(versionDd.root);
     });
 
-    // 先渲染默认骨架，再从服务端拉取真实数据
+    // 骨架先行：此时 body 上还有 booting 类，真实内容不显示
     renderSite();
     fillSoftware();
+
+    /** 数据就绪（或失败）后收掉骨架，让内容淡入 */
+    function finishBoot() {
+      document.body.classList.remove('booting');
+    }
 
     (async function boot() {
       try {
         state = await fetchData();
         renderSite();
         fillSoftware();
+        finishBoot();
       } catch (e) {
         showToast('加载数据失败：' + e.message);
         if (linksContainer) {
           linksContainer.innerHTML = '<p style="text-align:center;color:#c0392b;margin:20px 0;">数据加载失败，请刷新重试</p>';
         }
+        finishBoot(); // 失败也要退出骨架，否则页面一直空着
       }
     })();
   </script>
