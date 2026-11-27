@@ -2509,8 +2509,9 @@
       });
       if (version === null) return;
 
-      sw.versions.unshift({ version, links: [] });
-      selectedVer = 0;
+      // 新版本追加到末尾（原来 unshift 会插到最前面）
+      sw.versions.push({ version, links: [] });
+      selectedVer = sw.versions.length - 1;
       saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); flashPane(); } });
     });
 
@@ -2549,7 +2550,8 @@
       });
       if (url === null) return;
 
-      ver.links.unshift({ name, url, backupUrl: '' });
+      // 新链接追加到末尾（原来 unshift 会插到最前面）
+      ver.links.push({ name, url, backupUrl: '' });
       saveData().then((ok) => { if (ok) { renderAdmin(); fillSoftware(); flashPane(); } });
     });
 
