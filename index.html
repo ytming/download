@@ -367,8 +367,9 @@
   .view.active { display: block; }
 
   .admin-shell {
-    width: 100%;
-    max-width: 960px;
+    /* 后台固定宽度：切换软件时内容长短不同，也不会让整体宽度抖动 */
+    width: 960px;
+    max-width: calc(100vw - 48px);
     margin: 0 auto;
     padding-bottom: 40px;
   }
@@ -486,7 +487,15 @@
   @media (prefers-reduced-motion: reduce) {
     .sw-item.sorting, .ver-tab.sorting { transform: none; }
   }
-  .sw-item .sw-name { flex: 1; font-weight: 500; }
+  .sw-item .sw-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 500;
+    /* 名字过长时省略，不撑破 300px 的侧栏 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .sw-item .sw-count {
     font-size: 0.75rem;
     color: #8a7a5c;
