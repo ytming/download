@@ -964,7 +964,8 @@
   }
   .modal-close:active { transform: scale(0.96); }
   .modal .hint { font-size: 0.82rem; color: #8a7a5c; margin-bottom: 20px; line-height: 1.6; }
-  .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+  /* 弹窗底部现在只剩主操作按钮，统一靠右 */
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
   .modal-actions .btn { flex: 1; justify-content: center; }
   .err {
     font-size: 0.8rem;
@@ -1187,13 +1188,13 @@
   <!-- 输入弹窗：替代浏览器自带的 prompt -->
   <div class="overlay" id="inputOverlay">
     <div class="modal input-modal">
+      <button class="modal-close" id="btnInputClose" type="button" aria-label="关闭" title="关闭">×</button>
       <h3 id="inputTitle">请输入<span class="step-of" id="inputStep"></span></h3>
       <p class="hint" id="inputHint"></p>
       <label class="field-label" for="inputField" id="inputLabel">名称</label>
       <input type="text" id="inputField" autocomplete="off">
       <div class="err" id="inputErr"></div>
       <div class="modal-actions">
-        <button class="btn btn-ghost" id="btnInputCancel" type="button">取消</button>
         <button class="btn btn-primary" id="btnInputOk" type="button">确定</button>
       </div>
     </div>
@@ -1202,10 +1203,10 @@
   <!-- 通用确认弹窗 -->
   <div class="overlay" id="confirmOverlay">
     <div class="modal confirm-modal">
+      <button class="modal-close" id="btnConfirmClose" type="button" aria-label="关闭" title="关闭">×</button>
       <h3 id="confirmTitle">确认操作</h3>
       <p id="confirmText"></p>
       <div class="modal-actions">
-        <button class="btn btn-ghost" id="btnConfirmCancel" type="button">取消</button>
         <button class="btn btn-danger" id="btnConfirmOk" type="button">确定</button>
       </div>
     </div>
@@ -1214,6 +1215,7 @@
   <!-- 修改密码弹窗 -->
   <div class="overlay" id="pwdOverlay">
     <div class="modal">
+      <button class="modal-close" id="btnPwdClose" type="button" aria-label="关闭" title="关闭">×</button>
       <h3>修改管理密码</h3>
       <p class="hint">新密码保存在 EdgeOne Blob 存储中，保存后立即生效。
         若项目尚未绑定 Blob 存储，页面无法修改密码，请改环境变量 <code>ADMIN_PASSWORD</code> 后重新部署。</p>
@@ -1227,7 +1229,6 @@
       </div>
       <div class="err" id="pwdErr"></div>
       <div class="modal-actions">
-        <button class="btn btn-ghost" id="btnPwdCancel" type="button">取消</button>
         <button class="btn btn-primary" id="btnPwdOk" type="button">保存</button>
       </div>
     </div>
@@ -2292,7 +2293,7 @@
       $('confirmOverlay').classList.remove('show');
       confirmCb = null;
     }
-    $('btnConfirmCancel').addEventListener('click', closeConfirm);
+    $('btnConfirmClose').addEventListener('click', closeConfirm);
     $('btnConfirmOk').addEventListener('click', () => {
       const cb = confirmCb;
       closeConfirm();
@@ -2349,11 +2350,10 @@
       closeInput(val);
     }
 
-    $('btnInputCancel').addEventListener('click', () => closeInput(null));
+    $('btnInputClose').addEventListener('click', () => closeInput(null));
     $('btnInputOk').addEventListener('click', submitInput);
     $('inputField').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); submitInput(); }
-      if (e.key === 'Escape') { e.preventDefault(); closeInput(null); }
     });
 
     function openLogin() {
@@ -2413,7 +2413,6 @@
     $('btnLoginClose').addEventListener('click', closeLogin);
     $('pwdInput').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') tryLogin();
-      if (e.key === 'Escape') closeLogin();
     });
 
     $('btnBack').addEventListener('click', () => {
@@ -2462,7 +2461,7 @@
         $('pwdErr').textContent = '请求失败：' + e.message;
       }
     }
-    $('btnPwdCancel').addEventListener('click', () => $('pwdOverlay').classList.remove('show'));
+    $('btnPwdClose').addEventListener('click', () => $('pwdOverlay').classList.remove('show'));
     $('btnPwdOk').addEventListener('click', trySavePwd);
     $('newPwd').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') trySavePwd();
@@ -2580,22 +2579,17 @@
       });
     });
 
-    // 点击遮罩关闭
-    ['loginOverlay', 'confirmOverlay', 'pwdOverlay'].forEach((id) => {
-      $(id).addEventListener('click', (e) => {
-        if (e.target.id === id) $(id).classList.remove('show');
-      });
-    });
-    // 输入弹窗点击遮罩关闭，需要走 closeInput 以 resolve
-    $('inputOverlay').addEventListener('click', (e) => {
-      if (e.target.id === 'inputOverlay') closeInput(null);
-    });
+    // 关闭方式只有弹窗内的按钮（右上角 × 与主操作按钮）：
+    // 点击遮罩 / 按 Esc 都不再关闭，避免误触丢失正在填写的内容
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        closeLogin();
-        closeConfirm();
-        closeInput(null);
-        $('pwdOverlay').classList.remove('show');
+        // 仅阻止浏览器默认行为（如退出全屏），不关闭弹窗
+        if ($('loginOverlay').classList.contains('show')
+            || $('inputOverlay').classList.contains('show')
+            || $('confirmOverlay').classList.contains('show')
+            || $('pwdOverlay').classList.contains('show')) {
+          e.preventDefault();
+        }
       }
     });
 
